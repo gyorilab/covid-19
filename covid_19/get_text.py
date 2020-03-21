@@ -1,11 +1,17 @@
 import os
 import sys
 import json
+import time
 from os.path import abspath, dirname, join
 import pandas as pd
-
+from indra.util import batch_iter
+from indra.statements import stmts_from_json
+from indra.tools import assemble_corpus as ac
+from indra_db import get_db
+from indra_db.client.readonly import get_statement_jsons_from_papers
 
 basepath = join(dirname(abspath(__file__)), '..', 'data')
+
 
 def get_path(subdir):
     return join(basepath, subdir, subdir)
@@ -17,6 +23,9 @@ paths = {'pmc_comm': get_path('comm_use_subset'),
 
 
 metadata_file = join(basepath, 'all_sources_metadata_2020-03-13.csv')
+
+
+doc_df = None
 
 
 def get_file_data():
@@ -94,11 +103,54 @@ def dump_text_files(output_dir, doc_df):
     doc_df.to_csv(join(output_dir, 'metadata.csv'))
 
 
+def get_indradb_nxmls(doc_df):
+    unique_pmcids = list(df[~pd.isna(df.pmcid)].pmcid.unique())
+    return unique_pmcids
+
+
+def get_pmcids():
+    global doc_df
+    if doc_df is None:
+        doc_df = get_file_data()
+    unique_pmcids = list(doc_df[~pd.isna(doc_df.pmcid)].pmcid.unique())
+    return unique_pmcids
+
+
+def get_indradb_stmts():
+    pmcids = get_pmcids()
+    paper_refs = [('pmcid', p) for p in pmcids]
+    stmt_jsons = []
+    batch_size = 1000
+    start = time.time()
+    for batch_ix, paper_batch in enumerate(batch_iter(paper_refs, batch_size)):
+        if batch_ix <= 5:
+            continue
+        papers = list(paper_batch)
+        print("Querying DB for statements for %d papers" % batch_size)
+        batch_start = time.time()
+        result = get_statement_jsons_from_papers(papers)
+        batch_elapsed = time.time() - batch_start
+        batch_jsons = [stmt_json for stmt_hash, stmt_json
+                                 in result['statements'].items()]
+        print("Returned %d stmts in %f sec" %
+              (len(batch_jsons), batch_elapsed))
+        batch_stmts = stmts_from_json(batch_jsons)
+        ac.dump_statements(batch_stmts, 'batch_%02d.pkl' % batch_ix)
+        stmt_jsons += batch_jsons
+    elapsed = time.time() - start
+    print("Total time: %f sec, %d papers" % (elapsed, len(paper_refs)))
+    stmts = stmts_from_json(stmt_jsons)
+    ac.dump_statements(stmts, 'cord19_pmc_stmts.pkl')
+    return stmt_jsons
+
+
 if __name__ == '__main__':
-    df = get_file_data()
-    output_dir = sys.argv[1]
-    dump_text_files(output_dir, df)
-    #df[~pd.isna(df.pmcid)].pmcid.to_csv('covid_pmcids.csv', index=False)
+    pass
+    #df = get_file_data()
+    #output_dir = sys.argv[1]
+    #dump_text_files(output_dir, df)
+    #pmcids = get_indradb_nxmls(df)
+
     """
     - 29,500 total entries in metadata file.
     - 13,219 rows in dataset with non-NA content_path, meaning they have a
