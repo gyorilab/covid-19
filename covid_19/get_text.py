@@ -10,7 +10,7 @@ from indra.tools import assemble_corpus as ac
 from indra_db import get_db
 from indra_db.client.readonly import get_statement_jsons_from_papers
 
-basepath = join(dirname(abspath(__file__)), '..', 'data')
+basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-03-20')
 
 
 def get_path(subdir):
@@ -18,11 +18,11 @@ def get_path(subdir):
 
 paths = {'pmc_comm': get_path('comm_use_subset'),
          'pmc_noncomm': get_path('noncomm_use_subset'),
-         'pmc_custom': get_path('pmc_custom_license'),
+         'pmc_custom': get_path('custom_license'),
          'preprint': get_path('biorxiv_medrxiv'),}
 
 
-metadata_file = join(basepath, 'all_sources_metadata_2020-03-13.csv')
+metadata_file = join(basepath, 'metadata.csv')
 
 
 doc_df = None
@@ -44,7 +44,7 @@ def get_file_data():
     return file_data
 
 
-def unique_pmids(df):
+def unique_pmcids(df):
     return df[~pd.isna(df.pmcid)].pmcid.unique()
 
 
@@ -142,6 +142,7 @@ def get_indradb_stmts():
     stmts = stmts_from_json(stmt_jsons)
     ac.dump_statements(stmts, 'cord19_pmc_stmts.pkl')
     return stmt_jsons
+
 
 
 if __name__ == '__main__':
