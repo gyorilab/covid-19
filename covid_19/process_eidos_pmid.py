@@ -1,5 +1,6 @@
 """This script searches for relevant PMIDs on PubMed, and then
-reads the abstracts corresponding to each PMID with Eidos."""
+reads the abstracts corresponding to each PMID with Eidos. It is
+complementary to the pipeline which starts with the CORD19 document set."""
 import time
 import pickle
 from tqdm import tqdm
@@ -20,6 +21,8 @@ for pmid in tqdm(ids):
     if not abst:
         continue
     ep = eidos.process_text(abst, webservice='http://localhost:9000/')
+    for stmt in ep.statements:
+        stmt.evidence[0].pmid = pmid
     stmts[pmid] = ep.statements
 
 with open('../data/eidos_abstract_stmts.pkl', 'wb') as fh:

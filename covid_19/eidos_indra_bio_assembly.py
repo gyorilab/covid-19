@@ -1,6 +1,6 @@
-# This script assemvles Influences extracted from Eidos
-# by grounding the relevant concepts using Gilda and then transforming the
-# Influences into RegulateActivity statements.
+"""This script assemvles Influences extracted from Eidos
+by grounding the relevant concepts using Gilda and then transforming the
+Influences into RegulateActivity statements."""
 import tqdm
 import gilda
 import pickle
@@ -11,6 +11,7 @@ from indra.preassembler.grounding_mapper.standardize import \
     standardize_agent_name
 
 logging.getLogger('gilda').setLevel(logging.WARNING)
+
 
 def get_agent(concept):
     txt = concept.name
@@ -46,4 +47,3 @@ if __name__ == '__main__':
             bio_stmts.append(bio_stmt)
     with open('../eidos_bio_statements.pkl', 'wb') as fh:
         pickle.dump(bio_stmts, fh)
-

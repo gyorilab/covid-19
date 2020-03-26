@@ -1,4 +1,3 @@
-import re
 import csv
 
 
@@ -16,7 +15,7 @@ def read_metadata(fname):
 
 def get_text_refs_from_metadata(entry, metadata_version='1'):
     mappings = {
-        'ID': 'CORD19_INDRA_%s' % metadata_version,
+        'ID': 'CORD19_INDRA_V%s' % metadata_version,
         'sha': 'CORD19_SHA',
         'doi': 'DOI',
         'pmcid': 'PMCID',
@@ -28,5 +27,8 @@ def get_text_refs_from_metadata(entry, metadata_version='1'):
     for key, ref_key in mappings.items():
         val = entry.get(key)
         if val:
+            # Temporary patch to remove float suffixes
+            if val.endswith('.0'):
+                val = val[:-2]
             text_refs[ref_key] = val
     return text_refs
