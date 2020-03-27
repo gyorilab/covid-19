@@ -7,8 +7,9 @@ import pandas as pd
 from indra.util import batch_iter
 from indra.statements import stmts_from_json
 from indra.tools import assemble_corpus as ac
-from indra_db import get_db
+from indra_db import get_db, get_primary_db
 from indra_db.client.readonly import get_statement_jsons_from_papers
+from indra_db.util import distill_stmts
 
 basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-03-20')
 
@@ -37,7 +38,7 @@ def get_file_data():
                 file_hash = filename.split('.')[0]
                 hashes.append(file_hash)
                 file_data.append((content_path, content_type))
-    file_df = pd.DataFrame(file_data, index=hashes,
+    file_df = pd.DataFrame(file_data, index=hashes, dtype='str',
                            columns=['content_path', 'content_type'])
     metadata = pd.read_csv(metadata_file)
     file_data = metadata.join(file_df, 'sha')
@@ -116,7 +117,9 @@ def get_pmcids():
     return unique_pmcids
 
 
-def get_indradb_stmts():
+def get_indradb_pa_stmts():
+    """Get preassembled INDRA Stmts for PMC articles from INDRA DB."""
+    # Get the list of all PMCIDs from the corpus metadata
     pmcids = get_pmcids()
     paper_refs = [('pmcid', p) for p in pmcids]
     stmt_jsons = []
@@ -144,22 +147,26 @@ def get_indradb_stmts():
     return stmt_jsons
 
 
+def get_indradb_raw_stmts():
+    pmcids = get_pmcids()
+    db = get_primary_db()
+    stmt_ids = distill_stmts(db, get_full_stmts=False,
+                        clauses=[
+                            db.TextRef.pmcid_in(pmcids),
+                            db.TextContent.text_ref_id == db.TextRef.id,
+                            db.Reading.text_content_id == db.TextContent.id,
+                            db.RawStatements.reading_id == db.Reading.id])
+    elapsed = time.time() - start
+    print(elapsed)
+    stmt_results = db.select_all(db.RawStatements.json,
+                                 db.RawStatements.id.in_(stmt_ids))
+    stmts = []
+    for res in stmt_results:
+        stmt_json = json.loads(res.json.decode('utf8'))
+        stmts.append(stmts_from_json([stmt_json]))
+    ac.dump_statements(stmts, 'cord19_pmc_raw_stmts.pkl')
+
 
 if __name__ == '__main__':
     pass
-    #df = get_file_data()
-    #output_dir = sys.argv[1]
-    #dump_text_files(output_dir, df)
-    #pmcids = get_indradb_nxmls(df)
-
-    """
-    - 29,500 total entries in metadata file.
-    - 13,219 rows in dataset with non-NA content_path, meaning they have a
-      JSON file with hash associated with a row in the metadata dataframe.
-    - Of the remaining 16,281 rows with NO content_path, 
-    """
-
-
-
-
 
