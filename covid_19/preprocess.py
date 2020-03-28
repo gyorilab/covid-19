@@ -4,12 +4,7 @@ import json
 import time
 from os.path import abspath, dirname, join
 import pandas as pd
-from indra.util import batch_iter
-from indra.statements import stmts_from_json
-from indra.tools import assemble_corpus as ac
-from indra_db import get_db, get_primary_db
 from indra_db.client.readonly import get_statement_jsons_from_papers
-from indra_db.util import distill_stmts
 
 basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-03-27')
 
@@ -45,13 +40,24 @@ def get_article_data():
     return file_data
 
 
-def get_pmcids():
-    """Get unique PMCIDs from the dataset."""
+def get_ids(id_type):
+    """Get unique article identifiers from the dataset.
+
+    Parameters
+    ----------
+    id_type : str
+        Dataframe column name, e.g. 'pubmed_id', 'pmcid', 'doi'.
+
+    Returns
+    -------
+    list of str
+        List of unique identifiers in the dataset, e.g. all unique PMCIDs.
+    """
     global doc_df
     if doc_df is None:
         doc_df = get_article_data()
-    unique_pmcids = list(doc_df[~pd.isna(doc_df.pmcid)].pmcid.unique())
-    return unique_pmcids
+    unique_ids = list(doc_df[~pd.isna(doc_df[id_type])][id_type].unique())
+    return unique_ids
 
 
 def get_text_from_json(json_filename):
