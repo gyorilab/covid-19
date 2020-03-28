@@ -37,7 +37,7 @@ def filter_name_frequency(stmts, k=2):
 
 if __name__ == '__main__':
     with open('../eidos_statements_influence.pkl', 'rb') as fh:
-    	stmts = pickle.load(fh)
+        stmts = pickle.load(fh)
     make_fake_wm(stmts)
     stmts = filter_name_frequency(stmts, k=2)
     assembled_stmts = ac.run_preassembly(stmts,
