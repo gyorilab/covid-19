@@ -11,7 +11,7 @@ from indra_db import get_db, get_primary_db
 from indra_db.client.readonly import get_statement_jsons_from_papers
 from indra_db.util import distill_stmts
 
-basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-03-20')
+basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-03-27')
 
 
 def get_path(subdir):
