@@ -133,7 +133,7 @@ if __name__ == '__main__':
     db_stmts_file = join(stmts_dir, 'cord19_all_db_raw_stmts.pkl')
     gordon_stmts_file = join(stmts_dir, 'gordon_ndex_stmts.pkl')
     eidos_stmts_file = join(stmts_dir, 'eidos_bio_statements.pkl')
-    combined_stmts_file = join(stmts_dir, 'cord19_combined_stmts_file.pkl')
+    combined_stmts_file = join(stmts_dir, 'cord19_combined_stmts.pkl')
     # Get all unique text refs in the DB with identifiers in the CORD19
     # corpus
     ids = get_unique_text_refs()
