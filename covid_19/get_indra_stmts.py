@@ -111,10 +111,10 @@ def dump_indradb_raw_stmts(text_ref_ids, stmt_file):
     # Load statements from JSON and pickle
     print("Loading statements from JSON and pickling")
     start = time.time()
-    stmts = []
+    all_jsons = []
     for res in stmt_results:
-        stmt_json = json.loads(res.json.decode('utf8'))
-        stmts.append(stmts_from_json([stmt_json]))
+        all_jsons.append(json.loads(res.json.decode('utf8')))
+    stmts = stmts_from_json(all_jsons)
     ac.dump_statements(stmts, stmt_file)
     elapsed = time.time() - start
     print(f"{elapsed} seconds")
@@ -140,5 +140,5 @@ if __name__ == '__main__':
     # Get INDRA Statements from these text refs and dump to file
     dump_indradb_raw_stmts(list(ids), db_stmts_file)
     # Combine with Eidos and Gordon et al. network statements
-    combine_all_stmts([db_stmts_file, gordon_stmts_file, eidos_stmts_file],
-                      combined_stmts_file)
+    stmts = combine_all_stmts([db_stmts_file, gordon_stmts_file,
+                               eidos_stmts_file], combined_stmts_file)
