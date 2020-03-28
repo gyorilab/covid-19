@@ -29,7 +29,7 @@ metadata_file = join(basepath, 'metadata.csv')
 doc_df = None
 
 
-def get_file_data():
+def get_article_data():
     file_data = []
     hashes = []
     for content_type, content_path in paths.items():
@@ -45,8 +45,13 @@ def get_file_data():
     return file_data
 
 
-def unique_pmcids(df):
-    return df[~pd.isna(df.pmcid)].pmcid.unique()
+def get_pmcids():
+    """Get unique PMCIDs from the dataset."""
+    global doc_df
+    if doc_df is None:
+        doc_df = get_article_data()
+    unique_pmcids = list(doc_df[~pd.isna(doc_df.pmcid)].pmcid.unique())
+    return unique_pmcids
 
 
 def get_text_from_json(json_filename):
@@ -102,71 +107,4 @@ def dump_text_files(output_dir, doc_df):
             f.write(text)
     # Finally, dump the metadata to a CSV file
     doc_df.to_csv(join(output_dir, 'metadata.csv'))
-
-
-def get_indradb_nxmls(doc_df):
-    unique_pmcids = list(df[~pd.isna(df.pmcid)].pmcid.unique())
-    return unique_pmcids
-
-
-def get_pmcids():
-    global doc_df
-    if doc_df is None:
-        doc_df = get_file_data()
-    unique_pmcids = list(doc_df[~pd.isna(doc_df.pmcid)].pmcid.unique())
-    return unique_pmcids
-
-
-def get_indradb_pa_stmts():
-    """Get preassembled INDRA Stmts for PMC articles from INDRA DB."""
-    # Get the list of all PMCIDs from the corpus metadata
-    pmcids = get_pmcids()
-    paper_refs = [('pmcid', p) for p in pmcids]
-    stmt_jsons = []
-    batch_size = 1000
-    start = time.time()
-    for batch_ix, paper_batch in enumerate(batch_iter(paper_refs, batch_size)):
-        if batch_ix <= 5:
-            continue
-        papers = list(paper_batch)
-        print("Querying DB for statements for %d papers" % batch_size)
-        batch_start = time.time()
-        result = get_statement_jsons_from_papers(papers)
-        batch_elapsed = time.time() - batch_start
-        batch_jsons = [stmt_json for stmt_hash, stmt_json
-                                 in result['statements'].items()]
-        print("Returned %d stmts in %f sec" %
-              (len(batch_jsons), batch_elapsed))
-        batch_stmts = stmts_from_json(batch_jsons)
-        ac.dump_statements(batch_stmts, 'batch_%02d.pkl' % batch_ix)
-        stmt_jsons += batch_jsons
-    elapsed = time.time() - start
-    print("Total time: %f sec, %d papers" % (elapsed, len(paper_refs)))
-    stmts = stmts_from_json(stmt_jsons)
-    ac.dump_statements(stmts, 'cord19_pmc_stmts.pkl')
-    return stmt_jsons
-
-
-def get_indradb_raw_stmts():
-    pmcids = get_pmcids()
-    db = get_primary_db()
-    stmt_ids = distill_stmts(db, get_full_stmts=False,
-                        clauses=[
-                            db.TextRef.pmcid_in(pmcids),
-                            db.TextContent.text_ref_id == db.TextRef.id,
-                            db.Reading.text_content_id == db.TextContent.id,
-                            db.RawStatements.reading_id == db.Reading.id])
-    elapsed = time.time() - start
-    print(elapsed)
-    stmt_results = db.select_all(db.RawStatements.json,
-                                 db.RawStatements.id.in_(stmt_ids))
-    stmts = []
-    for res in stmt_results:
-        stmt_json = json.loads(res.json.decode('utf8'))
-        stmts.append(stmts_from_json([stmt_json]))
-    ac.dump_statements(stmts, 'cord19_pmc_raw_stmts.pkl')
-
-
-if __name__ == '__main__':
-    pass
 
