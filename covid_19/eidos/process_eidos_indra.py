@@ -27,8 +27,8 @@ for fname in tqdm.tqdm(fnames):
     if ep:
         for stmt in ep.statements:
             stmt.evidence[0].text_refs = text_refs
-            if 'PMID' in text_refs:
-                stmt.evidence[0].pmid = text_refs['PMID']
+            stmt.evidence[0].pmid = text_refs['PMID'] \
+                if 'PMID' in text_refs else None
     stmts += ep.statements
 
 with open('../eidos_statements.pkl', 'wb') as fh:

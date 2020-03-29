@@ -40,9 +40,10 @@ if __name__ == '__main__':
         stmts = pickle.load(fh)
     make_fake_wm(stmts)
     stmts = filter_name_frequency(stmts, k=2)
-    assembled_stmts = ac.run_preassembly(stmts,
-                                         matches_fun=agent_name_stmt_type_matches)
-    meta_data = 'This corpus was assembled from ~30k papers related to Covid-19.'
+    assembled_stmts = \
+        ac.run_preassembly(stmts, matches_fun=agent_name_stmt_type_matches)
+    meta_data = ('This corpus was assembled from ~30k '
+                 'papers related to Covid-19.')
     corpus = Corpus(assembled_stmts, raw_statements=stmts, meta_data=meta_data)
     corpus_name = 'covid-20200319-ontfree'
     corpus.s3_put(corpus_name)
