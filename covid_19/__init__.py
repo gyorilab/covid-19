@@ -6,7 +6,8 @@ def read_metadata(fname):
     with open(fname, 'r') as fh:
         reader = csv.reader(fh)
         header = next(reader)
-        header[0] = 'ID'
+        if header[0] != 'cord_uid':
+            header[0] = 'ID'
         for row in reader:
             entry = {h: str(v) for h, v in zip(header, row)}
             entries.append(entry)
@@ -26,6 +27,7 @@ def fix_doi(doi):
 def get_text_refs_from_metadata(entry, metadata_version='1'):
     mappings = {
         'ID': 'CORD19_INDRA_V%s' % metadata_version,
+        'cord_uid': 'CORD19_UID',
         'sha': 'CORD19_SHA',
         'doi': 'DOI',
         'pmcid': 'PMCID',
