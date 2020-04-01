@@ -93,39 +93,26 @@ def dump_indradb_raw_stmts(text_ref_ids, stmt_file):
     db = get_primary_db()
     print(f"Querying statement IDs for {len(text_ref_ids)} TextRefs")
     start = time.time()
-    stmt_ids = distill_stmts(db, get_full_stmts=False,
-                        clauses=[
+    stmts = distill_stmts(db, get_full_stmts=True,
+                          clauses=[
                             db.TextRef.id.in_(text_ref_ids),
                             db.TextContent.text_ref_id == db.TextRef.id,
                             db.Reading.text_content_id == db.TextContent.id,
                             db.RawStatements.reading_id == db.Reading.id])
-    elapsed = time.time() - start
-    print(f"{elapsed} seconds")
     # Get the INDRA Statement JSON for the Statement IDs
     print(f"Getting JSON for {len(stmt_ids)} stmts")
-    start = time.time()
-    stmt_results = db.select_all(db.RawStatements.json,
-                                 db.RawStatements.id.in_(stmt_ids))
-    elapsed = time.time() - start
-    print(f"{elapsed} seconds")
-    # Load statements from JSON and pickle
-    print("Loading statements from JSON and pickling")
-    start = time.time()
-    all_jsons = []
-    for res in stmt_results:
-        all_jsons.append(json.loads(res.json.decode('utf8')))
-    stmts = stmts_from_json(all_jsons)
     ac.dump_statements(stmts, stmt_file)
     elapsed = time.time() - start
     print(f"{elapsed} seconds")
     return stmts
+
 
 def combine_all_stmts(pkl_list, output_file):
     all_stmts = []
     for pkl_file in pkl_list:
         all_stmts.extend(ac.load_statements(pkl_file))
     ac.dump_statements(all_stmts, output_file)
-
+    return all_stmts
 
 if __name__ == '__main__':
     # Provide paths to all files
@@ -136,9 +123,13 @@ if __name__ == '__main__':
     combined_stmts_file = join(stmts_dir, 'cord19_combined_stmts.pkl')
     # Get all unique text refs in the DB with identifiers in the CORD19
     # corpus
-    ids = get_unique_text_refs()
+    tr_ids = get_unique_text_refs()
+    """
     # Get INDRA Statements from these text refs and dump to file
-    dump_indradb_raw_stmts(list(ids), db_stmts_file)
+    db_stmts = dump_indradb_raw_stmts(list(tr_ids), db_stmts_file)
     # Combine with Eidos and Gordon et al. network statements
     stmts = combine_all_stmts([db_stmts_file, gordon_stmts_file,
                                eidos_stmts_file], combined_stmts_file)
+    db = get_primary_db()
+    text_refs = db.select_all(db.TextRef, db.TextRef.id.in_(tr_ids))
+    """
