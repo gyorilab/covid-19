@@ -1,5 +1,7 @@
 import time
 import json
+from copy import deepcopy
+from itertools import groupby
 from os.path import abspath, dirname, join
 from indra.util import batch_iter
 from indra_db import get_primary_db
@@ -7,6 +9,7 @@ from indra_db.util import distill_stmts
 from indra.statements import stmts_from_json
 from indra.tools import assemble_corpus as ac
 from covid_19.preprocess import get_ids
+from covid_19 import read_metadata, get_text_refs_from_metadata
 
 
 def get_unique_text_refs():
@@ -38,6 +41,7 @@ def get_unique_text_refs():
     ids = set([res.id for res_list in (tr_dois, tr_pmcids, tr_pmids)
                       for res in res_list])
     print(len(ids), "unique TextRefs in DB")
+    trs = db.select_all(db.TextRef, db.TextRef.id.in_(ids))
     return ids
 
 
@@ -74,6 +78,33 @@ def get_indradb_pa_stmts():
     return stmt_jsons
 
 
+def get_reach_readings(tr_ids):
+    db = get_primary_db()
+    reach_data = db.select_all((db.Reading, db.TextRef,
+                               db.TextContent.source,
+                               db.TextContent.text_type),
+                             db.TextRef.id.in_(foo),
+                              db.TextContent.text_ref_id == db.TextRef.id,
+                              db.Reading.text_content_id == db.TextContent.id,
+                              db.Reading.reader == 'REACH')
+    # Group readings by TextRef
+    def tr_id_key_func(rd):
+        return rd[1].id
+    def content_priority_func(rd):
+        text_type_priorities = {'fulltext': 0, 'abstract': 1, 'title': 2}
+        source_priorities = {'pmc_oa': 0, 'manuscripts': 1, 'elsevier': 2,
+                             'pubmed': 3}
+        return (rd[1].id, text_type_priorities[rd[3]], source_priorities[rd[2]])
+    # Sort by TextRef ID and content type/source
+    reach_data.sort(key=content_priority_func)
+    # Iterate over groups
+    rds_filt = []
+    for tr_id, tr_group in groupby(reach_data, tr_id_key_func):
+        rds = list(tr_group)
+        rds_filt.append(rds[0])
+
+
+
 def dump_indradb_raw_stmts(text_ref_ids, stmt_file):
     """Dump all raw stmts in INDRA DB for a given set of TextRef IDs.
 
@@ -100,11 +131,70 @@ def dump_indradb_raw_stmts(text_ref_ids, stmt_file):
                             db.Reading.text_content_id == db.TextContent.id,
                             db.RawStatements.reading_id == db.Reading.id])
     # Get the INDRA Statement JSON for the Statement IDs
-    print(f"Getting JSON for {len(stmt_ids)} stmts")
-    ac.dump_statements(stmts, stmt_file)
+    ac.dump_statements(list(stmts), stmt_file)
     elapsed = time.time() - start
     print(f"{elapsed} seconds")
     return stmts
+
+
+def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-03-27'):
+    trs_by_doi = {}
+    trs_by_pmc = {}
+    trs_by_pmid = {}
+    trs_by_trid = {}
+    for tr in tr_ids:
+        if tr.doi:
+            trs_by_doi[tr.doi] = tr
+        if tr.pmcid:
+            trs_by_pmc[tr.pmcid] = tr
+        if tr.pmid:
+            trs_by_pmid[tr.pmid] = tr
+    multiple_tr_ids = []
+    mismatch_tr_ids = []
+    tr_dicts = {}
+    for md_row in md:
+        tr_md = get_text_refs_from_metadata(md_row,
+                                            metadata_version=metadata_version)
+        tr_ids_from_md = set()
+        if 'DOI' in tr_md and trs_by_doi.get(tr_md['DOI'].upper()):
+            tr_ids_from_md.add(trs_by_doi[tr_md['DOI'].upper()])
+        if 'PMCID' in tr_md and trs_by_pmc.get(tr_md['PMCID']):
+            tr_ids_from_md.add(trs_by_pmc[tr_md['PMCID']])
+        if 'PMID' in tr_md and trs_by_pmid.get(tr_md['PMID']):
+            tr_ids_from_md.add(trs_by_pmid[tr_md['PMID']])
+        if len(tr_ids_from_md) > 1:
+            print("More than one TextRef:", tr_md, tr_ids_from_md)
+            tr = list(tr_ids_from_md)[0]
+            multiple_tr_ids.append(tr_ids_from_md)
+        elif len(tr_ids_from_md) == 1:
+            tr_id = list(tr_ids_from_md)[0]
+        # No TextRef for this CORD19 entry, so skip it
+        else:
+            continue
+        # Now, find all statements with this TRID and update text ref dict
+        tr_dicts = {}
+        for tr in tr_ids_from_md:
+            tr_dict = {'TRID': tr.id}
+            if tr.pmcid:
+                tr_dict['PMCID'] = tr.pmcid
+            if tr.pmid:
+                tr_dict['PMID'] = tr.pmid
+            if tr.doi:
+                tr_dict['DOI'] = tr.doi
+            tr_dict['PMC'] = tr.pmcid
+            # Prefer IDs from the database wherever there is overlap
+            for id_type in ('DOI', 'PMCID', 'PMID'):
+                if id_type in tr_dict and id_type in tr_md:
+                    if tr_md[id_type].upper() != tr_dict[id_type].upper():
+                        print("Mismatch between INDRA DB and CORD19:",
+                              tr_dict, tr_md)
+                        mismatch_tr_ids.append((tr_dict, deepcopy(tr_md)))
+                    tr_id_type = tr_md.pop(id_type)
+            # Now that we've eliminated any overlaps, we can just update
+            # the statement text ref dict
+            tr_dict.update(tr_md)
+            tr_dicts[tr.id] = tr_dict
+        return tr_dicts
 
 
 def combine_all_stmts(pkl_list, output_file):
@@ -113,6 +203,7 @@ def combine_all_stmts(pkl_list, output_file):
         all_stmts.extend(ac.load_statements(pkl_file))
     ac.dump_statements(all_stmts, output_file)
     return all_stmts
+
 
 if __name__ == '__main__':
     # Provide paths to all files
@@ -124,12 +215,76 @@ if __name__ == '__main__':
     # Get all unique text refs in the DB with identifiers in the CORD19
     # corpus
     tr_ids = get_unique_text_refs()
+    md = read_metadata('data/2020-03-27/metadata.csv')
     """
     # Get INDRA Statements from these text refs and dump to file
-    db_stmts = dump_indradb_raw_stmts(list(tr_ids), db_stmts_file)
+    #db_stmts = dump_indradb_raw_stmts(list(tr_ids), db_stmts_file)
+
+    db_stmts = list(ac.load_statements(db_stmts_file))
+    # Dict of statements by TextRef ID
+    stmts_by_trid = {}
+    for stmt in db_stmts:
+        trid = stmt.evidence[0].text_refs['TRID']
+        if trid not in stmts_by_trid:
+            stmts_by_trid[trid] = [stmt]
+        else:
+            stmts_by_trid[trid].append(stmt)
+    db = get_primary_db()
+    stmt_textrefs = db.select_all(db.TextRef,
+                                  db.TextRef.id.in_(stmts_by_trid.keys()))
+    trs_by_doi = {}
+    trs_by_pmc = {}
+    trs_by_pmid = {}
+    for tr in stmt_textrefs:
+        if tr.doi:
+            trs_by_doi[tr.doi] = tr.id
+        if tr.pmcid:
+            trs_by_pmc[tr.pmcid] = tr.id
+        if tr.pmid:
+            trs_by_pmid[tr.pmid] = tr.id
+    md = read_metadata('data/2020-03-27/metadata.csv')
+    multiple_tr_ids = []
+    mismatch_tr_ids = []
+    for md_row in md:
+        tr_md = get_text_refs_from_metadata(md_row,
+                                            metadata_version='2020-03-27')
+        tr_ids_from_md = set()
+        if 'DOI' in tr_md and trs_by_doi.get(tr_md['DOI'].upper()):
+            tr_ids_from_md.add(trs_by_doi[tr_md['DOI'].upper()])
+        if 'PMCID' in tr_md and trs_by_pmc.get(tr_md['PMCID']):
+            tr_ids_from_md.add(trs_by_pmc[tr_md['PMCID']])
+        if 'PMID' in tr_md and trs_by_pmid.get(tr_md['PMID']):
+            tr_ids_from_md.add(trs_by_pmid[tr_md['PMID']])
+        if len(tr_ids_from_md) > 1:
+            print("More than one TRID:", tr_md, tr_ids_from_md)
+            tr_id = list(tr_ids_from_md)[0]
+            multiple_tr_ids.append(tr_ids_from_md)
+        elif len(tr_ids_from_md) == 1:
+            tr_id = list(tr_ids_from_md)[0]
+        # No match, so skip this CORD19 entry
+        else:
+            continue
+        # Now, find all statements with this TRID and update text ref dict
+        for tr_id in tr_ids_from_md:
+            tr_stmts = stmts_by_trid[tr_id]
+            for stmt in tr_stmts:
+                stmt_tr = stmt.evidence[0].text_refs
+                # Prefer IDs from the database wherever there is overlap
+                for id_type in ('DOI', 'PMCID', 'PMID'):
+                    if id_type in stmt_tr and id_type in tr_md:
+                        if tr_md[id_type].upper() != stmt_tr[id_type].upper():
+                            print("Mismatch between INDRA DB and CORD19:",
+                                  stmt_tr, tr_md)
+                            mismatch_tr_ids.append((stmt_tr, deepcopy(tr_md)))
+                        tr_id_type = tr_md.pop(id_type)
+                # Now that we've eliminated any overlaps, we can just update
+                # the statement text ref dict
+                stmt_tr.update(tr_md)
+
     # Combine with Eidos and Gordon et al. network statements
     stmts = combine_all_stmts([db_stmts_file, gordon_stmts_file,
                                eidos_stmts_file], combined_stmts_file)
     db = get_primary_db()
     text_refs = db.select_all(db.TextRef, db.TextRef.id.in_(tr_ids))
     """
+
