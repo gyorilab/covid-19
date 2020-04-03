@@ -1,12 +1,15 @@
 """This script searches for relevant PMIDs on PubMed, and then
 reads the abstracts corresponding to each PMID with Eidos. It is
 complementary to the pipeline which starts with the CORD19 document set."""
+import os
 import time
 import pickle
 from tqdm import tqdm
 from indra.sources import eidos
 from indra.literature import pubmed_client
 
+root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                    os.pardir, os.pardir)
 
 keywords = ['covid19', 'covid-19', 'sars-cov-2', 'sars-cov2']
 ids = []
@@ -25,5 +28,5 @@ for pmid in tqdm(ids):
         stmt.evidence[0].pmid = pmid
     stmts[pmid] = ep.statements
 
-with open('../data/eidos_abstract_stmts.pkl', 'wb') as fh:
+with open(os.path.join(root, 'stmts', 'eidos_abstract_stmts.pkl'), 'wb') as fh:
     pickle.dump(stmts, fh)

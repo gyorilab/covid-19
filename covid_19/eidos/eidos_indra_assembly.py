@@ -1,3 +1,4 @@
+import os
 import pickle
 import indra.tools.assemble_corpus as ac
 from indra.tools.live_curation import Corpus
@@ -36,7 +37,10 @@ def filter_name_frequency(stmts, k=2):
 
 
 if __name__ == '__main__':
-    with open('../eidos_statements_influence.pkl', 'rb') as fh:
+    stmts_pkl = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             os.pardir, os.pardir, 'stmts'
+                             'eidos_statements_influence.pkl')
+    with open(stmts_pkl, 'rb') as fh:
         stmts = pickle.load(fh)
     make_fake_wm(stmts)
     stmts = filter_name_frequency(stmts, k=2)

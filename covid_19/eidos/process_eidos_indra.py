@@ -6,13 +6,15 @@ import glob
 import tqdm
 import pickle
 from indra.sources import eidos
-from . import read_metadata, get_text_refs_from_metadata
+from covid_19 import read_metadata, get_text_refs_from_metadata
 
+root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                    os.pardir, os.pardir)
 
-metadata = read_metadata('../cord19_text/metadata.csv')
+metadata = read_metadata(os.path.join(root, 'cord19_text', 'metadata.csv'))
 metadata_by_id = {entry['ID']: entry for entry in metadata}
 
-fnames = glob.glob('../eidos_output/*.jsonld')
+fnames = glob.glob(os.path.join(root, 'eidos_output', '*.jsonld'))
 stmts = []
 for fname in tqdm.tqdm(fnames):
     cord_indra_id = re.match(r'CORD19_DOC_(\d+).txt.jsonld',
@@ -31,5 +33,5 @@ for fname in tqdm.tqdm(fnames):
                 if 'PMID' in text_refs else None
     stmts += ep.statements
 
-with open('../eidos_statements.pkl', 'wb') as fh:
+with open(os.path.join(root, 'stmts', 'eidos_statements.pkl'), 'wb') as fh:
     pickle.dump(stmts, fh)

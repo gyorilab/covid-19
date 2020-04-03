@@ -1,16 +1,14 @@
 """This script assemvles Influences extracted from Eidos
 by grounding the relevant concepts using Gilda and then transforming the
 Influences into RegulateActivity statements."""
+import os
 import tqdm
 import gilda
 import pickle
-import logging
 from indra.tools import assemble_corpus as ac
 from indra.statements import Influence, Activation, Inhibition, Agent
 from indra.preassembler.grounding_mapper.standardize import \
     standardize_agent_name
-
-logging.getLogger('gilda').setLevel(logging.WARNING)
 
 
 def get_agent(concept):
@@ -37,7 +35,9 @@ def get_regulate_activity(stmt):
 
 
 if __name__ == '__main__':
-    with open('../eidos_statements.pkl', 'rb') as fh:
+    root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        os.pardir, os.pardir)
+    with open(os.path.join(root, 'stmts', 'eidos_statements.pkl'), 'rb') as fh:
         stmts = pickle.load(fh)
     stmts = ac.filter_by_type(stmts, Influence)
     bio_stmts = []
@@ -45,5 +45,6 @@ if __name__ == '__main__':
         bio_stmt = get_regulate_activity(stmt)
         if bio_stmt:
             bio_stmts.append(bio_stmt)
-    with open('../eidos_bio_statements.pkl', 'wb') as fh:
+    with open(os.path.join(root, 'stmts',
+                           'eidos_bio_statements.pkl'), 'wb') as fh:
         pickle.dump(bio_stmts, fh)
