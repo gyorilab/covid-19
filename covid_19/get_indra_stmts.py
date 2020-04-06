@@ -1,5 +1,7 @@
+import os
 import time
 import json
+import zlib
 from copy import deepcopy
 from itertools import groupby
 from os.path import abspath, dirname, join
@@ -8,8 +10,8 @@ from indra_db import get_primary_db
 from indra_db.util import distill_stmts
 from indra.statements import stmts_from_json
 from indra.tools import assemble_corpus as ac
-from covid_19.preprocess import get_ids
-from covid_19 import read_metadata, get_text_refs_from_metadata
+from covid_19.preprocess import get_ids, fix_doi, load_metadata_dict, \
+                                get_text_refs_from_metadata
 
 
 def get_unique_text_refs():
@@ -25,7 +27,7 @@ def get_unique_text_refs():
     """
     pmcids = get_ids('pmcid')
     pmids = get_ids('pubmed_id')
-    dois = get_ids('doi')
+    dois = [fix_doi(doi) for doi in get_ids('doi')]
     # Get unique text_refs from the DB
     db = get_primary_db()
     print("Getting TextRefs by PMCID")
@@ -78,15 +80,15 @@ def get_indradb_pa_stmts():
     return stmt_jsons
 
 
-def get_reach_readings(tr_ids):
+def get_reach_readings(tr_dicts, dump_dir=None):
     db = get_primary_db()
     reach_data = db.select_all((db.Reading, db.TextRef,
-                               db.TextContent.source,
-                               db.TextContent.text_type),
-                             db.TextRef.id.in_(foo),
-                              db.TextContent.text_ref_id == db.TextRef.id,
-                              db.Reading.text_content_id == db.TextContent.id,
-                              db.Reading.reader == 'REACH')
+                                db.TextContent.source,
+                                db.TextContent.text_type),
+                               db.TextRef.id.in_(tr_dicts.keys()),
+                               db.TextContent.text_ref_id == db.TextRef.id,
+                               db.Reading.text_content_id == db.TextContent.id,
+                               db.Reading.reader == 'REACH')
     # Group readings by TextRef
     def tr_id_key_func(rd):
         return rd[1].id
@@ -101,7 +103,35 @@ def get_reach_readings(tr_ids):
     rds_filt = []
     for tr_id, tr_group in groupby(reach_data, tr_id_key_func):
         rds = list(tr_group)
-        rds_filt.append(rds[0])
+        best_reading = rds[0]
+        tr_dicts[tr_id]['READING_ID'] = best_reading.Reading.id
+        rds_filt.append(best_reading)
+    # If a dump directory is given, put all files in it
+    trs_by_cord = {}
+    if dump_dir:
+        json_dir = join(dump_dir, 'json')
+        os.mkdir(json_dir)
+        for reading_result in rds_filt:
+            tr = reading_result.TextRef
+            reading = reading_result.Reading
+            # If the reading output is empty, skip
+            if not reading.bytes:
+                print("Empty reading:")
+                print("Reading ID:", reading.id)
+                print("TextRef ID:", tr.id)
+                print("Source:", reading_result.source)
+                print("Text type:", reading_result.text_type)
+                continue
+            text_ref = tr_dicts[tr.id]
+            cord_uid = text_ref['CORD19_UID']
+            trs_by_cord[cord_uid] = text_ref
+            with open(join(json_dir, f'{cord_uid}.json'), 'wt') as f:
+                content = zlib.decompress(reading.bytes, 16+zlib.MAX_WBITS)
+                f.write(content.decode('utf8'))
+        # Dump the metadata dictionary
+        with open(join(dump_dir, 'metadata.json'), 'wt') as f:
+            json.dump(trs_by_cord, f, indent=2)
+    return rds_filt
 
 
 def dump_indradb_raw_stmts(text_ref_ids, stmt_file):
@@ -213,15 +243,16 @@ if __name__ == '__main__':
     # Get all unique text refs in the DB with identifiers in the CORD19
     # corpus
     text_refs = get_unique_text_refs()
-    md = read_metadata('data/2020-04-03/metadata.csv')
+    md = load_metadata_dict()
     tr_dicts = cord19_metadata_for_trs(text_refs, md,
-                                       metadata_version='2020-03-27')
+                                       metadata_version='2020-04-03')
+    reach_readings = get_reach_readings(tr_dicts,
+                                        dump_dir='cord19_reach_readings')
 
-    """
     # Get INDRA Statements from these text refs and dump to file
     #db_stmts = dump_indradb_raw_stmts(list(tr_ids), db_stmts_file)
-
     db_stmts = list(ac.load_statements(db_stmts_file))
+
     # Dict of statements by TextRef ID
     stmts_by_trid = {}
     for stmt in db_stmts:
@@ -230,9 +261,11 @@ if __name__ == '__main__':
             stmts_by_trid[trid] = [stmt]
         else:
             stmts_by_trid[trid].append(stmt)
+    """
     db = get_primary_db()
     stmt_textrefs = db.select_all(db.TextRef,
                                   db.TextRef.id.in_(stmts_by_trid.keys()))
+
     trs_by_doi = {}
     trs_by_pmc = {}
     trs_by_pmid = {}
