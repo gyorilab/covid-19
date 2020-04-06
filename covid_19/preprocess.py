@@ -6,7 +6,7 @@ from os.path import abspath, dirname, join
 import pandas as pd
 from indra_db.client.readonly import get_statement_jsons_from_papers
 
-basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-03-27')
+basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-04-03')
 
 
 def get_path(subdir):

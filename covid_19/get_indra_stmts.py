@@ -42,7 +42,7 @@ def get_unique_text_refs():
                       for res in res_list])
     print(len(ids), "unique TextRefs in DB")
     trs = db.select_all(db.TextRef, db.TextRef.id.in_(ids))
-    return ids
+    return trs
 
 
 def get_indradb_pa_stmts():
@@ -104,7 +104,6 @@ def get_reach_readings(tr_ids):
         rds_filt.append(rds[0])
 
 
-
 def dump_indradb_raw_stmts(text_ref_ids, stmt_file):
     """Dump all raw stmts in INDRA DB for a given set of TextRef IDs.
 
@@ -138,11 +137,12 @@ def dump_indradb_raw_stmts(text_ref_ids, stmt_file):
 
 
 def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-03-27'):
+    """Get unified text_ref info given TextRef objects and CORD19 metadata."""
     trs_by_doi = {}
     trs_by_pmc = {}
     trs_by_pmid = {}
     trs_by_trid = {}
-    for tr in tr_ids:
+    for tr in text_refs:
         if tr.doi:
             trs_by_doi[tr.doi] = tr
         if tr.pmcid:
@@ -172,7 +172,6 @@ def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-03-27'):
         else:
             continue
         # Now, find all statements with this TRID and update text ref dict
-        tr_dicts = {}
         for tr in tr_ids_from_md:
             tr_dict = {'TRID': tr.id}
             if tr.pmcid:
@@ -181,7 +180,6 @@ def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-03-27'):
                 tr_dict['PMID'] = tr.pmid
             if tr.doi:
                 tr_dict['DOI'] = tr.doi
-            tr_dict['PMC'] = tr.pmcid
             # Prefer IDs from the database wherever there is overlap
             for id_type in ('DOI', 'PMCID', 'PMID'):
                 if id_type in tr_dict and id_type in tr_md:
@@ -194,7 +192,7 @@ def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-03-27'):
             # the statement text ref dict
             tr_dict.update(tr_md)
             tr_dicts[tr.id] = tr_dict
-        return tr_dicts
+    return tr_dicts
 
 
 def combine_all_stmts(pkl_list, output_file):
@@ -214,8 +212,11 @@ if __name__ == '__main__':
     combined_stmts_file = join(stmts_dir, 'cord19_combined_stmts.pkl')
     # Get all unique text refs in the DB with identifiers in the CORD19
     # corpus
-    tr_ids = get_unique_text_refs()
-    md = read_metadata('data/2020-03-27/metadata.csv')
+    text_refs = get_unique_text_refs()
+    md = read_metadata('data/2020-04-03/metadata.csv')
+    tr_dicts = cord19_metadata_for_trs(text_refs, md,
+                                       metadata_version='2020-03-27')
+
     """
     # Get INDRA Statements from these text refs and dump to file
     #db_stmts = dump_indradb_raw_stmts(list(tr_ids), db_stmts_file)
