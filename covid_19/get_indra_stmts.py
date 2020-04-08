@@ -2,6 +2,7 @@ import os
 import time
 import json
 import zlib
+import argparse
 from copy import deepcopy
 from itertools import groupby
 from os.path import abspath, dirname, join
@@ -80,8 +81,11 @@ def get_indradb_pa_stmts():
     return stmt_jsons
 
 
-def get_reach_readings(tr_dicts, dump_dir=None):
+def get_reach_readings(text_refs, md, dump_dir=None):
     db = get_primary_db()
+    # Get text ref dicts with article metadata aligned between DB and CORD19
+    tr_dicts = cord19_metadata_for_trs(text_refs, md)
+    # Get REACH readings 
     reach_data = db.select_all((db.Reading, db.TextRef,
                                 db.TextContent.source,
                                 db.TextContent.text_type),
@@ -116,11 +120,6 @@ def get_reach_readings(tr_dicts, dump_dir=None):
             reading = reading_result.Reading
             # If the reading output is empty, skip
             if not reading.bytes:
-                print("Empty reading:")
-                print("Reading ID:", reading.id)
-                print("TextRef ID:", tr.id)
-                print("Source:", reading_result.source)
-                print("Text type:", reading_result.text_type)
                 continue
             text_ref = tr_dicts[tr.id]
             cord_uid = text_ref['CORD19_UID']
@@ -134,7 +133,7 @@ def get_reach_readings(tr_dicts, dump_dir=None):
     return rds_filt
 
 
-def dump_indradb_raw_stmts(text_ref_ids, stmt_file):
+def dump_raw_stmts(text_refs, md, stmt_file):
     """Dump all raw stmts in INDRA DB for a given set of TextRef IDs.
 
     Parameters
@@ -151,22 +150,43 @@ def dump_indradb_raw_stmts(text_ref_ids, stmt_file):
     """
     # Get raw statement IDs from the DB for the given TextRefs
     db = get_primary_db()
-    print(f"Querying statement IDs for {len(text_ref_ids)} TextRefs")
+    # Get text ref dicts with article metadata aligned between DB and CORD19
+    tr_dicts = cord19_metadata_for_trs(text_refs, md)
+    # Get statements for the given text refs
+    text_ref_ids = [tr.id for tr in text_refs]
+    print(f"Distilling statements for {len(text_ref_ids)} TextRefs")
     start = time.time()
-    stmts = distill_stmts(db, get_full_stmts=True,
-                          clauses=[
-                            db.TextRef.id.in_(text_ref_ids),
-                            db.TextContent.text_ref_id == db.TextRef.id,
-                            db.Reading.text_content_id == db.TextContent.id,
-                            db.RawStatements.reading_id == db.Reading.id])
+    db_stmts = distill_stmts(db, get_full_stmts=True,
+                             clauses=[
+                              db.TextRef.id.in_(text_ref_ids),
+                              db.TextContent.text_ref_id == db.TextRef.id,
+                              db.Reading.text_content_id == db.TextContent.id,
+                              db.RawStatements.reading_id == db.Reading.id])
+    # Group lists of statements by the IDs TextRef that they come from
+    stmts_by_trid = {}
+    for stmt in db_stmts:
+        trid = stmt.evidence[0].text_refs['TRID']
+        if trid not in stmts_by_trid:
+            stmts_by_trid[trid] = [stmt]
+        else:
+            stmts_by_trid[trid].append(stmt)
+    # For every statement, update the text ref dictionary of the evidence
+    # object with the aligned DB/CORD19 dictionaries obtained from the
+    # function cord19_metadata_for_trs:
+    stmts_flat = []
+    for tr_id, stmt_list in stmts_by_trid.items():
+        tr_dict = tr_dicts[tr_id]
+        for stmt in stmt_list:
+            stmt.evidence[0].text_refs.update(tr_dict)
+            stmts_flat.append(stmt)
     # Get the INDRA Statement JSON for the Statement IDs
-    ac.dump_statements(list(stmts), stmt_file)
+    ac.dump_statements(stmts_flat, stmt_file)
     elapsed = time.time() - start
     print(f"{elapsed} seconds")
-    return stmts
+    return stmts_flat
 
 
-def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-03-27'):
+def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-03'):
     """Get unified text_ref info given TextRef objects and CORD19 metadata."""
     trs_by_doi = {}
     trs_by_pmc = {}
@@ -234,91 +254,28 @@ def combine_all_stmts(pkl_list, output_file):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+            description='Get INDRA DB content for CORD19 articles.')
+    parser.add_argument('-m', '--mode', help='Mode (stmts or reach)',
+                        required=True)
+    args = parser.parse_args()
+
     # Provide paths to all files
     stmts_dir = join(dirname(abspath(__file__)), '..', 'stmts')
     db_stmts_file = join(stmts_dir, 'cord19_all_db_raw_stmts.pkl')
     gordon_stmts_file = join(stmts_dir, 'gordon_ndex_stmts.pkl')
     eidos_stmts_file = join(stmts_dir, 'eidos_bio_statements.pkl')
     combined_stmts_file = join(stmts_dir, 'cord19_combined_stmts.pkl')
-    # Get all unique text refs in the DB with identifiers in the CORD19
-    # corpus
+    # Get the text ref objects from the DB corresponding to the CORD19
+    # articles
     text_refs = get_unique_text_refs()
     md = load_metadata_dict()
-    tr_dicts = cord19_metadata_for_trs(text_refs, md,
-                                       metadata_version='2020-04-03')
-    reach_readings = get_reach_readings(tr_dicts,
-                                        dump_dir='cord19_reach_readings')
-
-    # Get INDRA Statements from these text refs and dump to file
-    #db_stmts = dump_indradb_raw_stmts(list(tr_ids), db_stmts_file)
-    db_stmts = list(ac.load_statements(db_stmts_file))
-
-    # Dict of statements by TextRef ID
-    stmts_by_trid = {}
-    for stmt in db_stmts:
-        trid = stmt.evidence[0].text_refs['TRID']
-        if trid not in stmts_by_trid:
-            stmts_by_trid[trid] = [stmt]
-        else:
-            stmts_by_trid[trid].append(stmt)
-    """
-    db = get_primary_db()
-    stmt_textrefs = db.select_all(db.TextRef,
-                                  db.TextRef.id.in_(stmts_by_trid.keys()))
-
-    trs_by_doi = {}
-    trs_by_pmc = {}
-    trs_by_pmid = {}
-    for tr in stmt_textrefs:
-        if tr.doi:
-            trs_by_doi[tr.doi] = tr.id
-        if tr.pmcid:
-            trs_by_pmc[tr.pmcid] = tr.id
-        if tr.pmid:
-            trs_by_pmid[tr.pmid] = tr.id
-    md = read_metadata('data/2020-03-27/metadata.csv')
-    multiple_tr_ids = []
-    mismatch_tr_ids = []
-    for md_row in md:
-        tr_md = get_text_refs_from_metadata(md_row,
-                                            metadata_version='2020-03-27')
-        tr_ids_from_md = set()
-        if 'DOI' in tr_md and trs_by_doi.get(tr_md['DOI'].upper()):
-            tr_ids_from_md.add(trs_by_doi[tr_md['DOI'].upper()])
-        if 'PMCID' in tr_md and trs_by_pmc.get(tr_md['PMCID']):
-            tr_ids_from_md.add(trs_by_pmc[tr_md['PMCID']])
-        if 'PMID' in tr_md and trs_by_pmid.get(tr_md['PMID']):
-            tr_ids_from_md.add(trs_by_pmid[tr_md['PMID']])
-        if len(tr_ids_from_md) > 1:
-            print("More than one TRID:", tr_md, tr_ids_from_md)
-            tr_id = list(tr_ids_from_md)[0]
-            multiple_tr_ids.append(tr_ids_from_md)
-        elif len(tr_ids_from_md) == 1:
-            tr_id = list(tr_ids_from_md)[0]
-        # No match, so skip this CORD19 entry
-        else:
-            continue
-        # Now, find all statements with this TRID and update text ref dict
-        for tr_id in tr_ids_from_md:
-            tr_stmts = stmts_by_trid[tr_id]
-            for stmt in tr_stmts:
-                stmt_tr = stmt.evidence[0].text_refs
-                # Prefer IDs from the database wherever there is overlap
-                for id_type in ('DOI', 'PMCID', 'PMID'):
-                    if id_type in stmt_tr and id_type in tr_md:
-                        if tr_md[id_type].upper() != stmt_tr[id_type].upper():
-                            print("Mismatch between INDRA DB and CORD19:",
-                                  stmt_tr, tr_md)
-                            mismatch_tr_ids.append((stmt_tr, deepcopy(tr_md)))
-                        tr_id_type = tr_md.pop(id_type)
-                # Now that we've eliminated any overlaps, we can just update
-                # the statement text ref dict
-                stmt_tr.update(tr_md)
-
-    # Combine with Eidos and Gordon et al. network statements
-    stmts = combine_all_stmts([db_stmts_file, gordon_stmts_file,
-                               eidos_stmts_file], combined_stmts_file)
-    db = get_primary_db()
-    text_refs = db.select_all(db.TextRef, db.TextRef.id.in_(tr_ids))
-    """
+    text_refs = text_refs[0:1000]
+    if args.mode == 'stmts':
+        db_stmts = dump_raw_stmts(text_refs, md, db_stmts_file)
+        combine_all_stmts([db_stmts_file, gordon_stmts_file, eidos_stmts_file],
+                           combined_stmts_file)
+    elif args.mode == 'reach':
+        reach_readings = get_reach_readings(text_refs, md,
+                                            dump_dir='cord19_reach_readings')
 
