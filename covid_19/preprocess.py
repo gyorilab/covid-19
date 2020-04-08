@@ -25,7 +25,7 @@ metadata_file = join(basepath, 'metadata.csv')
 doc_df = None
 
 
-def get_article_data():
+def get_metadata_df():
     file_data = []
     hashes = []
     for content_type, content_path in paths.items():
@@ -36,7 +36,28 @@ def get_article_data():
                 file_data.append((content_path, content_type))
     file_df = pd.DataFrame(file_data, index=hashes, dtype='str',
                            columns=['content_path', 'content_type'])
-    metadata = pd.read_csv(metadata_file)
+    dtype_dict = {
+            'cord_uid': 'object',
+            'sha': 'object',
+            'source_x': 'object',
+            'title': 'object',
+            'doi': 'object',
+            'pmcid': 'object',
+            'pubmed_id': 'object',
+            'license': 'object',
+            'abstract': 'object',
+            'publish_time': 'object',
+            'authors': 'object',
+            'journal': 'object',
+            'Microsoft Academic Paper ID': 'object',
+            'WHO #Covidence': 'object',
+            'has_pdf_parse': 'bool',
+            'has_pmc_xml_parse': 'bool',
+            'full_text_file': 'object',
+            'url': 'object',
+    }
+    metadata = pd.read_csv(metadata_file, dtype=dtype_dict,
+                           parse_dates=['publish_time'], index_col='cord_uid')
     file_data = metadata.join(file_df, 'sha')
     return file_data
 
@@ -56,7 +77,7 @@ def get_ids(id_type):
     """
     global doc_df
     if doc_df is None:
-        doc_df = get_article_data()
+        doc_df = get_metadata_df()
     unique_ids = list(doc_df[~pd.isna(doc_df[id_type])][id_type].unique())
     return unique_ids
 
@@ -116,17 +137,9 @@ def dump_text_files(output_dir, doc_df):
     doc_df.to_csv(join(output_dir, 'metadata.csv'))
 
 
-def load_metadata_dict():
-    entries = []
-    with open(metadata_file, 'r') as fh:
-        reader = csv.reader(fh)
-        header = next(reader)
-        if header[0] != 'cord_uid':
-            header[0] = 'ID'
-        for row in reader:
-            entry = {h: str(v) for h, v in zip(header, row)}
-            entries.append(entry)
-    return entries
+def get_metadata_dict():
+    df = get_metadata_df()
+    return df.to_dict(orient='records')
 
 
 def fix_doi(doi):
