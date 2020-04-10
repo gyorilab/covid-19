@@ -1,4 +1,5 @@
 import os
+import csv
 import sys
 import json
 import time
@@ -6,7 +7,7 @@ from os.path import abspath, dirname, join
 import pandas as pd
 from indra_db.client.readonly import get_statement_jsons_from_papers
 
-basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-03-27')
+basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-04-03')
 
 
 def get_path(subdir):
@@ -24,7 +25,7 @@ metadata_file = join(basepath, 'metadata.csv')
 doc_df = None
 
 
-def get_article_data():
+def get_metadata_df():
     file_data = []
     hashes = []
     for content_type, content_path in paths.items():
@@ -35,7 +36,28 @@ def get_article_data():
                 file_data.append((content_path, content_type))
     file_df = pd.DataFrame(file_data, index=hashes, dtype='str',
                            columns=['content_path', 'content_type'])
-    metadata = pd.read_csv(metadata_file)
+    dtype_dict = {
+            'cord_uid': 'object',
+            'sha': 'object',
+            'source_x': 'object',
+            'title': 'object',
+            'doi': 'object',
+            'pmcid': 'object',
+            'pubmed_id': 'object',
+            'license': 'object',
+            'abstract': 'object',
+            'publish_time': 'object',
+            'authors': 'object',
+            'journal': 'object',
+            'Microsoft Academic Paper ID': 'object',
+            'WHO #Covidence': 'object',
+            'has_pdf_parse': 'bool',
+            'has_pmc_xml_parse': 'bool',
+            'full_text_file': 'object',
+            'url': 'object',
+    }
+    metadata = pd.read_csv(metadata_file, dtype=dtype_dict,
+                           parse_dates=['publish_time'])
     file_data = metadata.join(file_df, 'sha')
     return file_data
 
@@ -55,7 +77,7 @@ def get_ids(id_type):
     """
     global doc_df
     if doc_df is None:
-        doc_df = get_article_data()
+        doc_df = get_metadata_df()
     unique_ids = list(doc_df[~pd.isna(doc_df[id_type])][id_type].unique())
     return unique_ids
 
@@ -113,4 +135,43 @@ def dump_text_files(output_dir, doc_df):
             f.write(text)
     # Finally, dump the metadata to a CSV file
     doc_df.to_csv(join(output_dir, 'metadata.csv'))
+
+
+def get_metadata_dict():
+    df = get_metadata_df()
+    return df.to_dict(orient='records')
+
+
+def fix_doi(doi):
+    if doi is None:
+        return None
+    prefixes = ['http://dx.doi.org/', 'doi.org/']
+    for prefix in prefixes:
+        if doi.startswith(prefix):
+            doi = doi[len(prefix):]
+    return doi
+
+
+def get_text_refs_from_metadata(entry, metadata_version='1'):
+    mappings = {
+        'ID': 'CORD19_INDRA_V%s' % metadata_version,
+        'cord_uid': 'CORD19_UID',
+        'sha': 'CORD19_SHA',
+        'doi': 'DOI',
+        'pmcid': 'PMCID',
+        'pubmed_id': 'PMID',
+        'WHO #Covidence': 'WHO_COVIDENCE',
+        'Microsoft Academic Paper ID': 'MICROSOFT'
+    }
+    text_refs = {}
+    for key, ref_key in mappings.items():
+        val = entry.get(key)
+        if val and not pd.isnull(val):
+            if key == 'doi':
+                val = fix_doi(val)
+            # Temporary patch to remove float suffixes
+            if val.endswith('.0'):
+                val = val[:-2]
+            text_refs[ref_key] = val
+    return text_refs
 
