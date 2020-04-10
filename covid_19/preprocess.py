@@ -57,7 +57,7 @@ def get_metadata_df():
             'url': 'object',
     }
     metadata = pd.read_csv(metadata_file, dtype=dtype_dict,
-                           parse_dates=['publish_time'], index_col='cord_uid')
+                           parse_dates=['publish_time'])
     file_data = metadata.join(file_df, 'sha')
     return file_data
 
@@ -166,7 +166,7 @@ def get_text_refs_from_metadata(entry, metadata_version='1'):
     text_refs = {}
     for key, ref_key in mappings.items():
         val = entry.get(key)
-        if val:
+        if val and not pd.isnull(val):
             if key == 'doi':
                 val = fix_doi(val)
             # Temporary patch to remove float suffixes

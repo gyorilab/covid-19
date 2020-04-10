@@ -5,13 +5,14 @@ import zlib
 import argparse
 from copy import deepcopy
 from itertools import groupby
+from collections import defaultdict
 from os.path import abspath, dirname, join
 from indra.util import batch_iter
 from indra_db import get_primary_db
 from indra_db.util import distill_stmts
-from indra.statements import stmts_from_json
+from indra.statements import stmts_from_json, stmts_to_json
 from indra.tools import assemble_corpus as ac
-from covid_19.preprocess import get_ids, fix_doi, load_metadata_dict, \
+from covid_19.preprocess import get_ids, fix_doi, get_metadata_dict, \
                                 get_text_refs_from_metadata
 
 
@@ -188,17 +189,17 @@ def dump_raw_stmts(text_refs, md, stmt_file):
 
 def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-03'):
     """Get unified text_ref info given TextRef objects and CORD19 metadata."""
-    trs_by_doi = {}
-    trs_by_pmc = {}
-    trs_by_pmid = {}
-    trs_by_trid = {}
+    trs_by_doi = defaultdict(set)
+    trs_by_pmc = defaultdict(set)
+    trs_by_pmid = defaultdict(set)
+    trs_by_trid = defaultdict(set)
     for tr in text_refs:
         if tr.doi:
-            trs_by_doi[tr.doi] = tr
+            trs_by_doi[tr.doi].add(tr)
         if tr.pmcid:
-            trs_by_pmc[tr.pmcid] = tr
+            trs_by_pmc[tr.pmcid].add(tr)
         if tr.pmid:
-            trs_by_pmid[tr.pmid] = tr
+            trs_by_pmid[tr.pmid].add(tr)
     multiple_tr_ids = []
     mismatch_tr_ids = []
     tr_dicts = {}
@@ -207,20 +208,17 @@ def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-03'):
                                             metadata_version=metadata_version)
         tr_ids_from_md = set()
         if 'DOI' in tr_md and trs_by_doi.get(tr_md['DOI'].upper()):
-            tr_ids_from_md.add(trs_by_doi[tr_md['DOI'].upper()])
+            tr_ids_from_md |= trs_by_doi[tr_md['DOI'].upper()]
         if 'PMCID' in tr_md and trs_by_pmc.get(tr_md['PMCID']):
-            tr_ids_from_md.add(trs_by_pmc[tr_md['PMCID']])
+            tr_ids_from_md |= trs_by_pmc[tr_md['PMCID']]
         if 'PMID' in tr_md and trs_by_pmid.get(tr_md['PMID']):
-            tr_ids_from_md.add(trs_by_pmid[tr_md['PMID']])
+            tr_ids_from_md |= trs_by_pmid[tr_md['PMID']]
+        if not tr_ids_from_md:
+            continue
         if len(tr_ids_from_md) > 1:
             print("More than one TextRef:", tr_md, tr_ids_from_md)
-            tr = list(tr_ids_from_md)[0]
             multiple_tr_ids.append(tr_ids_from_md)
-        elif len(tr_ids_from_md) == 1:
-            tr_id = list(tr_ids_from_md)[0]
         # No TextRef for this CORD19 entry, so skip it
-        else:
-            continue
         # Now, find all statements with this TRID and update text ref dict
         for tr in tr_ids_from_md:
             tr_dict = {'TRID': tr.id}
@@ -250,6 +248,10 @@ def combine_all_stmts(pkl_list, output_file):
     for pkl_file in pkl_list:
         all_stmts.extend(ac.load_statements(pkl_file))
     ac.dump_statements(all_stmts, output_file)
+    stmt_json = stmts_to_json(all_stmts)
+    output_json = f"{output_file.rsplit('.', maxsplit=1)[0]}.json"
+    with open(output_json, 'wt') as f:
+        json.dump(stmt_json, f, indent=2)
     return all_stmts
 
 
@@ -264,18 +266,18 @@ if __name__ == '__main__':
     stmts_dir = join(dirname(abspath(__file__)), '..', 'stmts')
     db_stmts_file = join(stmts_dir, 'cord19_all_db_raw_stmts.pkl')
     gordon_stmts_file = join(stmts_dir, 'gordon_ndex_stmts.pkl')
-    eidos_stmts_file = join(stmts_dir, 'eidos_bio_statements.pkl')
+    eidos_stmts_file = join(stmts_dir, 'eidos_bio_statements_v2.pkl')
     combined_stmts_file = join(stmts_dir, 'cord19_combined_stmts.pkl')
     # Get the text ref objects from the DB corresponding to the CORD19
     # articles
     text_refs = get_unique_text_refs()
-    md = load_metadata_dict()
-    text_refs = text_refs[0:1000]
+    md = get_metadata_dict()
+    tr_dicts = cord19_metadata_for_trs(text_refs, md)
+
     if args.mode == 'stmts':
         db_stmts = dump_raw_stmts(text_refs, md, db_stmts_file)
-        combine_all_stmts([db_stmts_file, gordon_stmts_file, eidos_stmts_file],
-                           combined_stmts_file)
+        all_stmts = combine_all_stmts([db_stmts_file, gordon_stmts_file,
+                                       eidos_stmts_file], combined_stmts_file)
     elif args.mode == 'reach':
         reach_readings = get_reach_readings(text_refs, md,
                                             dump_dir='cord19_reach_readings')
-
