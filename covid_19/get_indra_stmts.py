@@ -82,10 +82,9 @@ def get_indradb_pa_stmts():
     return stmt_jsons
 
 
-def get_reach_readings(text_refs, md, dump_dir=None):
+def get_reach_readings(tr_dicts, dump_dir=None):
     db = get_primary_db()
     # Get text ref dicts with article metadata aligned between DB and CORD19
-    tr_dicts = cord19_metadata_for_trs(text_refs, md)
     # Get REACH readings 
     reach_data = db.select_all((db.Reading, db.TextRef,
                                 db.TextContent.source,
@@ -134,13 +133,14 @@ def get_reach_readings(text_refs, md, dump_dir=None):
     return rds_filt
 
 
-def dump_raw_stmts(text_refs, md, stmt_file):
+def dump_raw_stmts(tr_dicts, stmt_file):
     """Dump all raw stmts in INDRA DB for a given set of TextRef IDs.
 
     Parameters
     ----------
-    text_ref_ids : list of ints
-        TextRefs to get statements from.
+    tr_dicts : dict of text ref information
+        Keys are text ref IDs (ints) mapped to dictionaries of text ref
+        metadata.
     stmt_file : str
         Path to file to dump pickled raw statements.
 
@@ -258,7 +258,8 @@ def combine_all_stmts(pkl_list, output_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
             description='Get INDRA DB content for CORD19 articles.')
-    parser.add_argument('-m', '--mode', help='Mode (stmts or reach)',
+    parser.add_argument('-m', '--mode',
+                        help='Mode (stmts, reach, or tr_dicts)',
                         required=True)
     args = parser.parse_args()
 
@@ -275,9 +276,14 @@ if __name__ == '__main__':
     tr_dicts = cord19_metadata_for_trs(text_refs, md)
 
     if args.mode == 'stmts':
-        db_stmts = dump_raw_stmts(text_refs, md, db_stmts_file)
+        db_stmts = dump_raw_stmts(tr_dicts, db_stmts_file)
         all_stmts = combine_all_stmts([db_stmts_file, gordon_stmts_file,
                                        eidos_stmts_file], combined_stmts_file)
     elif args.mode == 'reach':
-        reach_readings = get_reach_readings(text_refs, md,
+        reach_readings = get_reach_readings(tr_dicts,
                                             dump_dir='cord19_reach_readings')
+    elif args.mode == 'tr_dicts':
+        # Dump tr_dicts as JSON file
+        with open('tr_dicts.json', 'wt') as f:
+            json.dump(tr_dicts, f, indent=2)
+
