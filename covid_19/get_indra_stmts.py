@@ -151,8 +151,6 @@ def dump_raw_stmts(tr_dicts, stmt_file):
     """
     # Get raw statement IDs from the DB for the given TextRefs
     db = get_primary_db()
-    # Get text ref dicts with article metadata aligned between DB and CORD19
-    tr_dicts = cord19_metadata_for_trs(text_refs, md)
     # Get statements for the given text refs
     text_ref_ids = list(tr_dicts.keys())
     print(f"Distilling statements for {len(text_ref_ids)} TextRefs")
