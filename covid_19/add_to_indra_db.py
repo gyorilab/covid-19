@@ -34,7 +34,6 @@ class Cord19Manager(PmcManager):
 
 
     def get_missing_pmids(self, db, tr_data):
-        import ipdb; ipdb.set_trace()
         tr_data_pmid = []
         tr_data_pmcid = []
         tr_data_doi = []
@@ -88,6 +87,12 @@ class Cord19Manager(PmcManager):
 
 
 if __name__ == '__main__':
+    text_refs = get_unique_text_refs()
+    md = get_metadata_dict()
+    tr_dicts = cord19_metadata_for_trs(text_refs, md)
+
+    # All entries in tr_dicts have
+
     # Columns
     """
     df = get_file_data()
@@ -103,6 +108,7 @@ if __name__ == '__main__':
     db = get_primary_db()
     cm = Cord19Manager()
     missing_pmids = cm.upload_batch(db, tr_data, None)
+    """
     """
     import pickle
     with open('../tr_data_with_pmids.pkl', 'rb') as f:
@@ -123,7 +129,7 @@ if __name__ == '__main__':
             #print(id_res)
             #tr.update(id_res)
             results.append(pubmed_res)
-
+    """
 
 
 
