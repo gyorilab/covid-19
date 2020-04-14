@@ -185,9 +185,10 @@ def get_raw_stmts(tr_dicts):
     stmts_flat = []
     for tr_id, stmt_list in stmts_by_trid.items():
         tr_dict = tr_dicts[tr_id]
-        for stmt in stmt_list:
-            stmt.evidence[0].text_refs.update(tr_dict)
-            stmts_flat.append(stmt)
+        if tr_dict:
+            for stmt in stmt_list:
+                stmt.evidence[0].text_refs.update(tr_dict)
+        stmts_flat += stmt_list
     elapsed = time.time() - start
     print(f"{elapsed} seconds")
     return stmts_flat
