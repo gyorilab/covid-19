@@ -12,6 +12,7 @@ from indra_db import get_primary_db
 from indra_db.util import distill_stmts
 from indra.statements import stmts_from_json, stmts_to_json
 from indra.tools import assemble_corpus as ac
+from indra.literature import pubmed_client
 from covid_19.preprocess import get_ids, fix_doi, get_metadata_dict, \
                                 get_text_refs_from_metadata
 
@@ -49,13 +50,24 @@ def get_unique_text_refs():
     return trs
 
 
+def get_text_refs_for_pubmed_search_term(search_term, **kwargs):
+    """"Returns text ref IDs for PMIDs obtained using a PubMed search."""
+    print('Searching for %s' % search_term)
+    pmids = pubmed_client.get_ids(search_term, **kwargs)
+    print('Getting TextRefs for %d PMIDs' % len(pmids))
+    db = get_primary_db()
+    tr_pmids = db.select_all(db.TextRef.id, db.TextRef.pmid_in(pmids))
+    trids = {res.id for res in tr_pmids}
+    return trids
+
+
 def get_indradb_pa_stmts():
     """Get preassembled INDRA Stmts for PMC articles from INDRA DB.
 
     DEPRECATED. Get Raw Statements instead.
     """
     # Get the list of all PMCIDs from the corpus metadata
-    pmcids = get_pmcids()
+    pmcids = get_ids('pmcid')
     paper_refs = [('pmcid', p) for p in pmcids]
     stmt_jsons = []
     batch_size = 1000
@@ -133,16 +145,14 @@ def get_reach_readings(tr_dicts, dump_dir=None):
     return rds_filt
 
 
-def dump_raw_stmts(tr_dicts, stmt_file):
-    """Dump all raw stmts in INDRA DB for a given set of TextRef IDs.
+def get_raw_stmts(tr_dicts):
+    """Return all raw stmts in INDRA DB for a given set of TextRef IDs.
 
     Parameters
     ----------
     tr_dicts : dict of text ref information
         Keys are text ref IDs (ints) mapped to dictionaries of text ref
         metadata.
-    stmt_file : str
-        Path to file to dump pickled raw statements.
 
     Returns
     -------
@@ -157,10 +167,10 @@ def dump_raw_stmts(tr_dicts, stmt_file):
     start = time.time()
     db_stmts = distill_stmts(db, get_full_stmts=True,
                              clauses=[
-                              db.TextRef.id.in_(text_ref_ids),
-                              db.TextContent.text_ref_id == db.TextRef.id,
-                              db.Reading.text_content_id == db.TextContent.id,
-                              db.RawStatements.reading_id == db.Reading.id])
+                                 db.TextRef.id.in_(text_ref_ids),
+                                 db.TextContent.text_ref_id == db.TextRef.id,
+                                 db.Reading.text_content_id == db.TextContent.id,
+                                 db.RawStatements.reading_id == db.Reading.id])
     # Group lists of statements by the IDs TextRef that they come from
     stmts_by_trid = {}
     for stmt in db_stmts:
@@ -178,10 +188,30 @@ def dump_raw_stmts(tr_dicts, stmt_file):
         for stmt in stmt_list:
             stmt.evidence[0].text_refs.update(tr_dict)
             stmts_flat.append(stmt)
-    # Get the INDRA Statement JSON for the Statement IDs
-    ac.dump_statements(stmts_flat, stmt_file)
     elapsed = time.time() - start
     print(f"{elapsed} seconds")
+    return stmts_flat
+
+
+def dump_raw_stmts(tr_dicts, stmt_file):
+    """Dump all raw stmts in INDRA DB for a given set of TextRef IDs.
+
+    Parameters
+    ----------
+    tr_dicts : dict of text ref information
+        Keys are text ref IDs (ints) mapped to dictionaries of text ref
+        metadata.
+    stmt_file : str
+        Path to file to dump pickled raw statements.
+
+    Returns
+    -------
+    list of stmts
+        Raw INDRA Statements retrieved from the INDRA DB.
+    """
+    # Get the INDRA Statement JSON for the Statement IDs
+    stmts_flat = get_raw_stmts(tr_dicts)
+    ac.dump_statements(stmts_flat, stmt_file)
     return stmts_flat
 
 
