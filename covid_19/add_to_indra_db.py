@@ -1,10 +1,11 @@
 import logging
 import pandas as pd
+from indra.util import batch_iter
 from indra_db import get_primary_db
 from indra.literature import id_lookup
 from indra.literature import pubmed_client
 from indra_db.managers import content_manager
-from indra_db.managers.content_manager import PmcManager
+from indra_db.managers.content_manager import PmcManager, ContentManager
 from covid_19.get_indra_stmts import get_unique_text_refs, get_metadata_dict, \
                                      cord19_metadata_for_trs
 from covid_19.preprocess import get_text_refs_from_metadata
@@ -49,23 +50,30 @@ class Cord19Manager(ContentManager):
         # TextRef table and will update them with any new metadata
         filtered_tr_records = []
         flawed_tr_records = []
-        for ix, tr_batch in enumerate(batch_iter(tr_data_set)):
+        for ix, tr_batch in enumerate(batch_iter(tr_data_set, 10000)):
             print("Getting Text Refs using pmid/pmcid/doi, batch", ix)
             filt_batch, flaw_batch = \
-                    self.filter_text_refs(db,a tr_batch,
+                    self.filter_text_refs(db, set(tr_batch),
                                     primary_id_types=['pmid', 'pmcid', 'doi'])
             filtered_tr_records.extend(filt_batch)
             flawed_tr_records.extend(flaw_batch)
 
+
+        trs_to_skip = {rec for cause, rec in flawed_tr_records}
+        # Why did the original version not skip in case of disagreeing
+        # pmid or doi?
+        #pmcids_to_skip = {rec[self.tr_cols.index('pmcid')]
+        #                  for cause, rec in flawed_tr_records
+        #                  if cause in ['pmcid', 'over_match_input',
+        #                               'over_match_db']}
+
         import ipdb; ipdb.set_trace()
-        pmcids_to_skip = {rec[self.tr_cols.index('pmcid')]
-                          for cause, rec in flawed_tr_records
-                          if cause in ['pmcid', 'over_match_input',
-                                       'over_match_db']}
-        if len(pmcids_to_skip) is not 0:
+
+        if len(trs_to_skip) is not 0:
             mod_tc_data = [
-                tc for tc in tc_data if tc['pmcid'] not in pmcids_to_skip
-                ]
+                tc for tc in tc_data
+                if (tc.get('pmid'), tc.get('pmcid'), tc.get('doi'))
+                                                    not in pmcids_to_skip]
         else:
             mod_tc_data = tc_data
 

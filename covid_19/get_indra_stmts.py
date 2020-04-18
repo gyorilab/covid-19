@@ -315,7 +315,7 @@ if __name__ == '__main__':
     elif args.mode == 'tr_dicts':
         # Dump tr_dicts as JSON file
         with open('tr_dicts.json', 'wt') as f:
-            json.dump(tr_dicts, f, indent=2)a
+            json.dump(tr_dicts, f, indent=2)
         multiple_trs = [('trid', 'pmid', 'pmcid', 'doi', 'manuscript_id')]
         for tr_set in multiple_tr_ids:
             for tr in tr_set:
