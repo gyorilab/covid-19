@@ -94,7 +94,7 @@ def get_raw_statement_text_grounding_counts(stmts):
             gr = agent.get_grounding()
             standard_name = name_from_grounding(*gr) if gr[0] else ''
             url = get_identifiers_url(*gr) if gr[0] is not None else ''
-            gilda_grounding = gilda.ground(txt)
+            gilda_grounding = gilda.ground(txt, context=stmt.evidence[0].text)
             gilda_grounding = '%s:%s' % (gilda_grounding[0].term.db,
                                          gilda_grounding[0].term.id) \
                 if gilda_grounding else ''
