@@ -216,7 +216,7 @@ def dump_raw_stmts(tr_dicts, stmt_file):
     return stmts_flat
 
 
-def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-03'):
+def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-24'):
     """Get unified text_ref info given TextRef objects and CORD19 metadata."""
     trs_by_doi = defaultdict(set)
     trs_by_pmc = defaultdict(set)
