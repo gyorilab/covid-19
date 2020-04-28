@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+from collections import defaultdict
 from indra.util import batch_iter
 from indra_db import get_primary_db
 from indra.literature import id_lookup
@@ -11,6 +12,8 @@ from covid_19.get_indra_stmts import get_unique_text_refs, get_metadata_dict, \
                                      cord19_metadata_for_trs
 from covid_19.preprocess import get_text_refs_from_metadata, \
                                 get_texts_for_entry
+from indra_db.databases import sql_expressions as sql_exp
+
 
 logger = logging.getLogger(__name__)
 
@@ -66,15 +69,15 @@ class Cord19Manager(ContentManager):
             return []
         logger.info("Beginning to filter text content...")
         tr_list = []
+        # Step 1: Build a dictionary matching IDs to text ref objects
         for ix, tc_batch in enumerate(batch_iter(tc_data, 10000)):
             # Get the sets of IDs for this batch
             pmid_set = set([tc['pmid'] for tc in tc_data if tc['pmid']])
             pmcid_set = set([tc['pmcid'] for tc in tc_data if tc['pmcid']])
             doi_set = set([tc['doi'] for tc in tc_data if tc['doi']])
 
-            # Step 1: Build a dictionary matching IDs to text ref objects
-            logger.debug("Getting text refs for pmcid->trid dict..")
-            # Get all TextRefs for the
+            logger.debug("Getting text refs for CORD19 articles")
+            # Get all TextRefs for the CORD19 IDs
             tr_list = db.select_all(db.TextRef, sql_exp.or_(
                             db.TextRef.pmid_in(pmid_set, filter_ids=True),
                             db.TextRef.pmcid_in(pmcid_set, filter_ids=True),
@@ -84,7 +87,7 @@ class Cord19Manager(ContentManager):
         trs_by_doi = defaultdict(set)
         trs_by_pmc = defaultdict(set)
         trs_by_pmid = defaultdict(set)
-        for tr in text_refs:
+        for tr in tr_list:
             if tr.doi:
                 trs_by_doi[tr.doi].add(tr)
             if tr.pmcid:
@@ -92,28 +95,68 @@ class Cord19Manager(ContentManager):
             if tr.pmid:
                 trs_by_pmid[tr.pmid].add(tr)
 
-        pmcid_trid_dict = {
-            pmcid: trid for (pmcid, trid) in
-                            db.get_values(tref_list, ['pmcid', 'id'])
-            }
+        # Now, build a new dictionary of text content including the TRIDs
+        # rather than pmid/pmcid/doi
+        tc_data_by_tr = []
+        for tc_entry in tc_data:
+            by_tr_entry = {}
+            for field in ('text', 'source', 'format'):
+                by_tr_entry[field] = tc_entry[field]
+            tr_ids_for_tc = set()
+            for id_type, trs_by_id in (('pmid', trs_by_pmid),
+                                       ('pmcid', trs_by_pmc),
+                                       ('doi', trs_by_doi)):
+                tr_set = trs_by_id.get(tc_entry[id_type])
+                if tr_set is not None:
+                    assert len(tr_set) == 1
+                    tr = list(tr_set)[0]
+                    tr_ids_for_tc.add(tr.id)
+            # Because this function is called using tc_data that has already
+            # been filtered by text ref, we should always get unambiguous
+            # matches to text_refs here.
+            if len(tr_ids_for_tc) == 0:
+                continue
+            elif len(tr_ids_for_tc) != 1:
+                import ipdb; ipdb.set_trace()
+            else:
+                tr_id = list(tr_ids_for_tc)[0]
+                by_tr_entry['trid'] = tr_id
+                tc_data_by_tr.append(by_tr_entry)
+
+        #pmcid_trid_dict = {
+        #    pmcid: trid for (pmcid, trid) in
+        #                    db.get_values(tref_list, ['pmcid', 'id'])
+        #    }
+
         # Step 2: Get existing Text Content objects corresponding to the
         # the given text refs with the same format and source
         # This should be a very small list, in general.
-        logger.debug('Finding existing text content from db.')
-        existing_tcs = db.select_all(
-            db.TextContent,
-            db.TextContent.text_ref_id.in_([tr.id for tr in tr_list]),
-            db.TextContent.source == self.,
-            db.TextContent.format == formats.XML
+        existing_tc_records = []
+        #for source in ('cord19_abstract', 'cord19_pmc_json',
+        #               'cord19_pdf_json'):
+        for source, text_type in (('cord19_abstract', 'abstract'),):
+            logger.debug('Finding existing text content from db for '
+                         'source type %s' % source)
+            tc_by_source = [tc_entry for tc_entry in tc_data_by_tr
+                                     if tc_entry['source'] == source]
+            existing_tcs = db.select_all(
+                db.TextContent,
+                db.TextContent.text_ref_id.in_([
+                                tc['trid'] for tc in tc_by_source]),
+                db.TextContent.source == source,
+                db.TextContent.format == 'text',
+                db.TextContent.text_type == text_type
             )
+            # Reformat Text Content objects to list of tuples
+            existing_tc_records += [
+                (tc.text_ref_id, tc.source, tc.format, tc.text_type)
+                for tc in existing_tcs
+                ]
+            logger.debug("Found %d existing records on the db for %s." %
+                         (len(existing_tc_records), source))
 
-        # Reformat Text Content objects to list of tuples
-        existing_tc_records = [
-            (tc.text_ref_id, tc.source, tc.format, tc.text_type)
-            for tc in existing_tcs
-            ]
-        logger.debug("Found %d existing records on the db."
-                     % len(existing_tc_records))
+        import ipdb; ipdb.set_trace()
+        """
         tc_records = []
         # Now, iterate over the TC data dictionary and build up tc_records,
         # which is the list of tuples that a will be inserted into the DB
@@ -143,7 +186,8 @@ class Cord19Manager(ContentManager):
             ]
         logger.info("Finished filtering the text content.")
         return list(set(filtered_tc_records))
-
+        """
+        return
 
 
     def populate(self, db):
@@ -194,10 +238,10 @@ class Cord19Manager(ContentManager):
         #    )
         # FIXME gatherer.add('refs', len(filtered_tr_records))
 
-        import ipdb; ipdb.set_trace()
 
         # Process the text content data
         filtered_tc_records = self.filter_text_content(db, mod_tc_data)
+        import ipdb; ipdb.set_trace()
 
 
         # Upload the text content data.
