@@ -38,7 +38,7 @@ class Cord19Manager(ContentManager):
         # Get tr_data list from Cord19 metadata
         # tr_data is a list [{'pmid': xxx, 'pmcid': xxx}, {...}]
         # tc_data is a list of dictionaries keyed by column name (???)
-        for ix, md_entry in enumerate(cord_md[0:1000]):
+        for ix, md_entry in enumerate(cord_md):
             if ix % 10000 == 0:
                 print(f"Processing CORD-19 full texts: {ix} of {len(cord_md)}")
             text_refs = get_text_refs_from_metadata(md_entry)
@@ -236,12 +236,11 @@ class Cord19Manager(ContentManager):
 
 if __name__ == '__main__':
     md = get_metadata_dict()
-
     import random
     random.seed(1)
     random.shuffle(md)
-    md = md[0:20]
-
+    md = [e for e in md if e['doi'] and
+                           e['doi'].upper() != '0.1126/SCIENCE.ABB7331']
     cm = Cord19Manager(md)
     db = get_primary_db()
     cm.populate(db)
