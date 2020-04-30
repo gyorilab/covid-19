@@ -25,18 +25,16 @@ gatherer = DataGatherer('content', ['refs', 'content'])
 
 
 class Cord19Manager(ContentManager):
-    my_source = 'cord19'
-    #tr_cols = ('pmid', 'pmcid', 'doi', 'cord19_uid')
     tr_cols = ('pmid', 'pmcid', 'doi')
 
     def __init__(self, cord_md):
         self.cord_md = cord_md
         self.tr_data = []
         self.tc_data = []
+        self.tc_cols = ('text_ref_id', 'source', 'format', 'text_type',
+                        'content',)
         self.review_fname = 'cord19_mgr_review.txt'
 
-        import random
-        random.shuffle(cord_md)
         # Get tr_data list from Cord19 metadata
         # tr_data is a list [{'pmid': xxx, 'pmcid': xxx}, {...}]
         # tc_data is a list of dictionaries keyed by column name (???)
@@ -50,21 +48,23 @@ class Cord19Manager(ContentManager):
             tr_data_entry = {'pmid': text_refs.get('PMID'),
                              'pmcid': text_refs.get('PMCID'),
                              'doi': doi,
-                             'cord_uid': text_refs.get('CORD_UID')}
+                             'cord_uid': text_refs.get('CORD19_UID')}
             source_type = md_entry['full_text_file']
             # If has abstract, add TC entry with abstract content
             tc_texts = get_texts_for_entry(md_entry)
-            for text_type, text in tc_texts:
-                tc_data_entry = {'text': text,
-                                 'source': text_type,
-                                 'format': 'text'}
+            for source, text_type, text in tc_texts:
+                tc_data_entry = {'source': source,
+                                 'format': 'text',
+                                 'text_type': text_type,
+                                 'content': text}
                 tc_data_entry.update(tr_data_entry)
                 self.tc_data.append(tc_data_entry)
             self.tr_data.append(tr_data_entry)
 
 
     def filter_text_content(self, db, tc_data):
-        """Filter the text content to identify pre-existing records."""
+        """Link Text Content entries to corresponding Text Refs and filter
+        out entries already in the database."""
         if not len(tc_data):
             return []
         logger.info("Beginning to filter text content...")
@@ -97,10 +97,12 @@ class Cord19Manager(ContentManager):
 
         # Now, build a new dictionary of text content including the TRIDs
         # rather than pmid/pmcid/doi
+        # A list of dictionaries each containing: tr_id, source, format and
+        # text_type
         tc_data_by_tr = []
         for tc_entry in tc_data:
             by_tr_entry = {}
-            for field in ('text', 'source', 'format'):
+            for field in ('source', 'format', 'text_type', 'content'):
                 by_tr_entry[field] = tc_entry[field]
             tr_ids_for_tc = set()
             for id_type, trs_by_id in (('pmid', trs_by_pmid),
@@ -114,27 +116,22 @@ class Cord19Manager(ContentManager):
             # Because this function is called using tc_data that has already
             # been filtered by text ref, we should always get unambiguous
             # matches to text_refs here.
-            if len(tr_ids_for_tc) == 0:
+            if len(tr_ids_for_tc) != 1:
+                logger.warning('Missing or ambiguous match to text ref: %s'
+                                 % str(tc_entry))
                 continue
-            elif len(tr_ids_for_tc) != 1:
-                import ipdb; ipdb.set_trace()
             else:
                 tr_id = list(tr_ids_for_tc)[0]
                 by_tr_entry['trid'] = tr_id
                 tc_data_by_tr.append(by_tr_entry)
 
-        #pmcid_trid_dict = {
-        #    pmcid: trid for (pmcid, trid) in
-        #                    db.get_values(tref_list, ['pmcid', 'id'])
-        #    }
-
         # Step 2: Get existing Text Content objects corresponding to the
-        # the given text refs with the same format and source
+        # the given text refs with the same format and source.
         # This should be a very small list, in general.
         existing_tc_records = []
-        #for source in ('cord19_abstract', 'cord19_pmc_json',
-        #               'cord19_pdf_json'):
-        for source, text_type in (('cord19_abstract', 'abstract'),):
+        for source, text_type in (('cord19_abstract', 'abstract'),
+                                  ('cord19_pmc_xml', 'fulltext'),
+                                  ('cord19_pdf', 'fulltext')):
             logger.debug('Finding existing text content from db for '
                          'source type %s' % source)
             tc_by_source = [tc_entry for tc_entry in tc_data_by_tr
@@ -154,42 +151,23 @@ class Cord19Manager(ContentManager):
                 ]
             logger.debug("Found %d existing records on the db for %s." %
                          (len(existing_tc_records), source))
-
-        import ipdb; ipdb.set_trace()
-        """
+        # Convert list of dicts into a list of tuples
         tc_records = []
-        # Now, iterate over the TC data dictionary and build up tc_records,
-        # which is the list of tuples that a will be inserted into the DB
-        for tc in tc_data:
-            if tc['pmcid'] not in pmcid_trid_dict.keys():
-                # In principle this shouldn't happen, because the set of
-                # TCs in tc_data corresponds to the set of TRs that are
-                # either in the DB already or were just newly inserted,
-                # and any records with ID issues should have been filtered
-                # out
-                logger.warning("Found pmcid (%s) among text content data, but "
-                               "not in the database. Skipping." % tc['pmcid'])
-                continue
-            tc_records.append(
-                (
-                    # First entry is TR object, not TR ID
-                    pmcid_trid_dict[tc['pmcid']],
-                    self.my_source,
-                    formats.XML,
-                    tc['text_type'],
-                    tc['content']
-                    )
-                )
-        # Filter the TC records to exclude 
+        for tc_entry in tc_data_by_tr:
+            tc_records.append((tc_entry['trid'], tc_entry['source'],
+                               tc_entry['format'], tc_entry['text_type'],
+                               tc_entry['content']))
+
+        # Filter the TC records to exclude
         filtered_tc_records = [
-            rec for rec in tc_records if rec[:-1] not in existing_tc_records
-            ]
+           rec for rec in tc_records if rec[:-1] not in existing_tc_records
+        ]
         logger.info("Finished filtering the text content.")
         return list(set(filtered_tc_records))
-        """
-        return
 
 
+    @ContentManager._record_for_review
+    @DGContext.wrap(gatherer)
     def populate(self, db):
         # Turn the list of dicts into a set of tuples
         tr_data_set = {tuple([entry[id_type] for id_type in self.tr_cols])
@@ -200,16 +178,15 @@ class Cord19Manager(ContentManager):
         # Filter_text_refs will figure out which articles are already in the
         # TextRef table and will update them with any new metadata;
         # filtered_tr_records are the ones that need to be added to the DB
-        filtered_tr_records = []
-        flawed_tr_records = []
+        filtered_tr_records = set()
+        flawed_tr_records = set()
         for ix, tr_batch in enumerate(batch_iter(tr_data_set, 10000)):
             print("Getting Text Refs using pmid/pmcid/doi, batch", ix)
             filt_batch, flaw_batch = \
                     self.filter_text_refs(db, set(tr_batch),
                                     primary_id_types=['pmid', 'pmcid', 'doi'])
-            filtered_tr_records.extend(filt_batch)
-            flawed_tr_records.extend(flaw_batch)
-
+            filtered_tr_records |= set(filt_batch)
+            flawed_tr_records |= set(flaw_batch)
         trs_to_skip = {rec for cause, rec in flawed_tr_records}
 
         # Why did the original version not skip in case of disagreeing
@@ -226,33 +203,32 @@ class Cord19Manager(ContentManager):
                 if (tc.get('pmid'), tc.get('pmcid'), tc.get('doi'))
                                                     not in trs_to_skip]
         else:
-            mod_tc_data = tc_data
+            mod_tc_data = self.tc_data
 
         # Upload TextRef data for articles NOT already in the DB
         logger.info('Adding %d new text refs...' % len(filtered_tr_records))
-        #self.copy_into_db(
-        #    db,
-        #    'text_ref',
-        #    filtered_tr_records,
-        #    self.tr_cols
-        #    )
-        # FIXME gatherer.add('refs', len(filtered_tr_records))
-
+        if filtered_tr_records:
+            self.copy_into_db(
+                db,
+                'text_ref',
+                filtered_tr_records,
+                self.tr_cols
+                )
+        gatherer.add('refs', len(filtered_tr_records))
 
         # Process the text content data
         filtered_tc_records = self.filter_text_content(db, mod_tc_data)
+
         import ipdb; ipdb.set_trace()
-
-
         # Upload the text content data.
         logger.info('Adding %d more text content entries...' %
                     len(filtered_tc_records))
-        #self.copy_into_db(
-        #    db,
-        #    'text_content',
-        #    filtered_tc_records,
-        #    self.tc_cols
-        #    )
+        self.copy_into_db(
+            db,
+            'text_content',
+            filtered_tc_records,
+            self.tc_cols
+            )
         gatherer.add('content', len(filtered_tc_records))
         return
 
@@ -260,6 +236,12 @@ class Cord19Manager(ContentManager):
 
 if __name__ == '__main__':
     md = get_metadata_dict()
+
+    import random
+    random.seed(1)
+    random.shuffle(md)
+    md = md[0:20]
+
     cm = Cord19Manager(md)
     db = get_primary_db()
     cm.populate(db)

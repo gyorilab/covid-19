@@ -38,15 +38,15 @@ def get_texts_for_entry(md_entry):
                 filename = f"{filename}.json"
                 content_path = join(content_dir, 'pdf_json', filename)
                 text = get_text_from_json(content_path)
-                texts.append(('cord19_pdf', text))
+                texts.append(('cord19_pdf', 'fulltext', text))
         if md_entry['has_pmc_xml_parse']:
             filename =  f"{md_entry['pmcid'].upper()}.xml.json"
             content_path = join(content_dir, 'pmc_json', filename)
             text = get_text_from_json(content_path)
-            texts.append(('cord19_pmc_xml', text))
+            texts.append(('cord19_pmc_xml', 'fulltext', text))
     if md_entry['abstract']:
         text = md_entry['abstract']
-        texts.append(('cord19_abstract', text))
+        texts.append(('cord19_abstract', 'abstract', text))
     return texts
 
 
