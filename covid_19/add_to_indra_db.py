@@ -70,15 +70,18 @@ class Cord19Manager(ContentManager):
         logger.info("Beginning to filter text content...")
         tr_list = []
         # Step 1: Build a dictionary matching IDs to text ref objects
-        for ix, tc_batch in enumerate(batch_iter(tc_data, 10000)):
+        for ix, tc_batch in enumerate(batch_iter(tc_data, 5000)):
             # Get the sets of IDs for this batch
-            pmid_set = set([tc['pmid'] for tc in tc_data if tc['pmid']])
-            pmcid_set = set([tc['pmcid'] for tc in tc_data if tc['pmcid']])
-            doi_set = set([tc['doi'] for tc in tc_data if tc['doi']])
-
-            logger.debug("Getting text refs for CORD19 articles")
+            # Only use the generator once!
+            ids = [(tc['pmid'], tc['pmcid'], tc['doi']) for tc in tc_batch]
+            pmids, pmcids, dois = list(zip(*ids))
+            # Remove any Nones and convert to sets
+            pmid_set = set([i for i in pmids if i is not None])
+            pmcid_set = set([i for i in pmcids if i is not None])
+            doi_set = set([i for i in dois if i is not None])
             # Get all TextRefs for the CORD19 IDs
-            tr_list = db.select_all(db.TextRef, sql_exp.or_(
+            logger.debug("Getting text refs for CORD19 articles")
+            tr_list += db.select_all(db.TextRef, sql_exp.or_(
                             db.TextRef.pmid_in(pmid_set, filter_ids=True),
                             db.TextRef.pmcid_in(pmcid_set, filter_ids=True),
                             db.TextRef.doi_in(doi_set, filter_ids=True)))
@@ -99,6 +102,7 @@ class Cord19Manager(ContentManager):
         # rather than pmid/pmcid/doi
         # A list of dictionaries each containing: tr_id, source, format and
         # text_type
+        flawed_tcs = set()
         tc_data_by_tr = []
         for tc_entry in tc_data:
             by_tr_entry = {}
@@ -117,9 +121,12 @@ class Cord19Manager(ContentManager):
             # been filtered by text ref, we should always get unambiguous
             # matches to text_refs here.
             if len(tr_ids_for_tc) != 1:
-                logger.warning('Missing or ambiguous match to text ref: %s'
-                                 % str(tc_entry))
-                continue
+                log_entry = (tc_entry['pmid'], tc_entry['pmcid'],
+                             tc_entry['doi'], tc_entry['cord_uid'],
+                             tuple(tr_ids_for_tc))
+                logger.warning('Missing or ambiguous match to text ref: %s' %
+                    str(log_entry))
+                flawed_tcs.add(log_entry)
             else:
                 tr_id = list(tr_ids_for_tc)[0]
                 by_tr_entry['trid'] = tr_id
@@ -163,8 +170,7 @@ class Cord19Manager(ContentManager):
            rec for rec in tc_records if rec[:-1] not in existing_tc_records
         ]
         logger.info("Finished filtering the text content.")
-        return list(set(filtered_tc_records))
-
+        return list(set(filtered_tc_records)), flawed_tcs
 
     @ContentManager._record_for_review
     @DGContext.wrap(gatherer)
@@ -172,9 +178,6 @@ class Cord19Manager(ContentManager):
         # Turn the list of dicts into a set of tuples
         tr_data_set = {tuple([entry[id_type] for id_type in self.tr_cols])
                        for entry in self.tr_data}
-        # FIXME HACK: Manually remove the broken DOI
-        #tr_data_set = set([t for t in tr_data_set
-        #                     if t[2] != '0.1126/SCIENCE.ABB7331'])
         # Filter_text_refs will figure out which articles are already in the
         # TextRef table and will update them with any new metadata;
         # filtered_tr_records are the ones that need to be added to the DB
@@ -188,7 +191,6 @@ class Cord19Manager(ContentManager):
             filtered_tr_records |= set(filt_batch)
             flawed_tr_records |= set(flaw_batch)
         trs_to_skip = {rec for cause, rec in flawed_tr_records}
-
         # Why did the original version not skip in case of disagreeing
         # pmid or doi?
         #pmcids_to_skip = {rec[self.tr_cols.index('pmcid')]
@@ -217,9 +219,9 @@ class Cord19Manager(ContentManager):
         gatherer.add('refs', len(filtered_tr_records))
 
         # Process the text content data
-        filtered_tc_records = self.filter_text_content(db, mod_tc_data)
+        filtered_tc_records, flawed_tcs = \
+                            self.filter_text_content(db, mod_tc_data)
 
-        import ipdb; ipdb.set_trace()
         # Upload the text content data.
         logger.info('Adding %d more text content entries...' %
                     len(filtered_tc_records))
@@ -230,64 +232,17 @@ class Cord19Manager(ContentManager):
             self.tc_cols
             )
         gatherer.add('content', len(filtered_tc_records))
-        return
-
+        return {'filtered_tr_records': filtered_tr_records,
+                'flawed_tr_records': flawed_tr_records,
+                'mod_tc_data': mod_tc_data,
+                'filtered_tc_records': filtered_tc_records}
 
 
 if __name__ == '__main__':
     md = get_metadata_dict()
-    import random
-    random.seed(1)
-    random.shuffle(md)
     md = [e for e in md if e['doi'] and
                            e['doi'].upper() != '0.1126/SCIENCE.ABB7331']
     cm = Cord19Manager(md)
     db = get_primary_db()
     cm.populate(db)
-
-
-    #text_refs = get_unique_text_refs()
-    #tr_dicts = cord19_metadata_for_trs(text_refs, md)
-
-    # All entries in tr_dicts have
-
-    # Columns
-    """
-    df = get_file_data()
-    tr_data = []
-    for row in df.itertuples():
-        pmid = get_val(row, 'pubmed_id')
-        pmcid = get_val(row, 'pmcid')
-        doi = get_val(row, 'doi')
-        # Manuscript ID is None
-        tr_entry = {'pmid': pmid, 'pmcid': pmcid, 'doi': doi,
-                    'manuscript_id': None}
-        tr_data.append(tr_entry)
-    db = get_primary_db()
-    cm = Cord19Manager()
-    missing_pmids = cm.upload_batch(db, tr_data, None)
-    """
-    """
-    import pickle
-    with open('../tr_data_with_pmids.pkl', 'rb') as f:
-        tr_data = pickle.load(f)
-    tr_data_doi = [tr for tr in tr_data
-                   if tr['pmid'] is None and tr['pmcid'] is None and
-                      tr['doi'] is not None]
-    import random
-    import time
-    random.shuffle(tr_data_doi)
-    results = []
-    for tr in tr_data_doi[0:50]:
-        if tr['pmid'] is None and tr['pmcid'] is None and \
-           tr['doi'] is not None:
-            pubmed_res = pubmed_client.get_ids(f'{tr["doi"]}[AID]')
-            time.sleep(1)
-            #id_res = id_lookup(tr['doi'], 'doi')
-            #print(id_res)
-            #tr.update(id_res)
-            results.append(pubmed_res)
-    """
-
-
 
