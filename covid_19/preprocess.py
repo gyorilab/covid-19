@@ -34,11 +34,13 @@ def get_texts_for_entry(md_entry):
                            md_entry['full_text_file'])
         if md_entry['has_pdf_parse']:
             filenames = [s.strip() for s in md_entry['sha'].split(';')]
+            pdf_texts = []
             for filename in filenames:
                 filename = f"{filename}.json"
                 content_path = join(content_dir, 'pdf_json', filename)
-                text = get_text_from_json(content_path)
-                texts.append(('cord19_pdf', 'fulltext', text))
+                pdf_texts.append(get_text_from_json(content_path))
+            combined_text = '\n'.join(pdf_texts)
+            texts.append(('cord19_pdf', 'fulltext', combined_text))
         if md_entry['has_pmc_xml_parse']:
             filename =  f"{md_entry['pmcid'].upper()}.xml.json"
             content_path = join(content_dir, 'pmc_json', filename)
