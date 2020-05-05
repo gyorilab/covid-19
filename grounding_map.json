@@ -79,5 +79,11 @@
  },
  "Toll Like Receptor": {
   "FPLX": "TLR"
+ },
+ "DOAC": {
+  "MESH": "D000925"
+ },
+ "P-glycoprotein": {
+  "HGNC": "40"
  }
 }
