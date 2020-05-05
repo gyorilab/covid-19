@@ -6,36 +6,9 @@ from indra.statements import RegulateActivity
 from emmaa.model_tests import StatementCheckingTest
 
 
-frieman_sars_cov_2_preprint = {'URL':
-    'https://www.biorxiv.org/content/10.1101/2020.03.25.008482v2'}
-frieman_sars_mers_paper = {'PMCID': 'PMC4136000'}
-
 # These are the current standardized names for the viruses of interest
 virus_names = {'severe acute respiratory syndrome coronavirus 2',
                'SARS Virus', 'Middle East Respiratory Syndrome Coronavirus'}
-
-
-def has_text_ref(text_refs, refs):
-    for ref in refs:
-        for ref_key, ref_id in ref.items():
-            if text_refs.get(ref_key) == ref_id:
-                return True
-    return False
-
-
-def filter_text_refs(stmts, refs):
-    return [s for s in stmts if has_text_ref(s.evidence[0].text_refs, refs)]
-
-
-def separate_viral_regulation(stmts):
-    viral_reg_stmts = []
-    other_stmts = []
-    for stmt in stmts:
-        if isinstance(stmt, RegulateActivity) and stmt.obj.name in virus_names:
-            viral_reg_stmts.append(stmt)
-        else:
-            other_stmts.append(stmts)
-    return viral_reg_stmts, other_stmts
 
 
 def update_emmaa_tests(viral_reg_stmts):
@@ -52,6 +25,17 @@ def update_emmaa_tests(viral_reg_stmts):
     return tests
 
 
+def filter_by_tag(stmts, has=None, not_has=None):
+    has = has if has else set()
+    not_has = not_has if not_has else set()
+    stmts_out = []
+    for stmt in stmts:
+        tags = set(stmt.evidence[0].annotations['hypothes.is'].get('tags', []))
+        if has <= tags and not (not_has & tags):
+            stmts_out.append(stmt)
+    return stmts_out
+
+
 if __name__ == '__main__':
     # Note that REACH needs to be running locally for this to work
     reader = lambda txt: reach.process_text(txt, url=reach.local_text_url)
@@ -60,15 +44,13 @@ if __name__ == '__main__':
     hp = hypothesis.process_annotations(reader=reader)
     print(f'{len(hp.statements)} statements from Hypothes.is.')
     # Filter to sources
-    stmts = filter_text_refs(hp.statements, [frieman_sars_cov_2_preprint,
-                                             frieman_sars_mers_paper])
-    print(f'{len(stmts)} statements from sources of interest.')
+    test_stmts = filter_by_tag(hp.statements, has={'test', 'covid19'})
+    model_stmts = filter_by_tag(hp.statements, has={'indra', 'covid19'},
+                                not_has={'test'})
+    print(f'{len(test_stmts)} statements that will be'
+          f'used as tests and {len(model_stmts)} other statements.')
 
-    viral_reg_stmts, other_stmts = separate_viral_regulation(stmts)
-    print(f'{len(viral_reg_stmts)} viral regulation statements that will be'
-          f'used as tests and {len(other_stmts)} other statements.')
-
-    updated_test_stmts = update_emmaa_tests(viral_reg_stmts)
+    updated_test_stmts = update_emmaa_tests(test_stmts)
 
     stmts_file = join(dirname(abspath(__file__)), '..', 'stmts',
                       'covid19_curated_tests.pkl')
@@ -78,4 +60,4 @@ if __name__ == '__main__':
     stmts_file = join(dirname(abspath(__file__)), '..', 'stmts',
                       'hypothesis_stmts.pkl')
     with open(stmts_file, 'wb') as fh:
-        pickle.dump(other_stmts, fh)
+        pickle.dump(model_stmts, fh)
