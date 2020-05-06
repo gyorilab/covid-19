@@ -5,6 +5,7 @@ import json
 import time
 from os.path import abspath, dirname, join, isdir
 import pandas as pd
+from indra.util import zip_string
 from indra_db.client.readonly import get_statement_jsons_from_papers
 
 
@@ -40,7 +41,7 @@ def get_zip_texts_for_entry(md_entry):
                 content_path = join(content_dir, 'pdf_json', filename)
                 pdf_texts.append(get_text_from_json(content_path))
             combined_text = '\n'.join(pdf_texts)
-            texts.append(('cord19_pdf', 'fulltext', zip_string(combined_text))
+            texts.append(('cord19_pdf', 'fulltext', zip_string(combined_text)))
         if md_entry['has_pmc_xml_parse']:
             filename =  f"{md_entry['pmcid'].upper()}.xml.json"
             content_path = join(content_dir, 'pmc_json', filename)
