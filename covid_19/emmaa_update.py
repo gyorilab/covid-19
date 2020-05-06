@@ -74,7 +74,7 @@ if __name__ == '__main__':
     new_cord_by_tr, new_cord_no_tr = stmts_by_text_refs(new_cord_grounded)
 
     # Add any ModelManager statements from non-Cord19 publications
-    updated_mm_stmts_by_tr = combined_stmts(new_cord_by_tr, old_mm_by_tr)
+    updated_mm_stmts_by_tr = combine_stmts(new_cord_by_tr, old_mm_by_tr)
     updated_mm_stmts = [s for stmt_list in updated_mm_stmts_by_tr.values()
                           for s in stmt_list]
 
@@ -82,6 +82,6 @@ if __name__ == '__main__':
     combined_stmts = updated_mm_stmts + drug_stmts + gordon_stmts
 
     # Dump new pickle
-    ac.dump_statements(args.output_file)
+    ac.dump_statements(combined_stmts, args.output_file)
 
 
