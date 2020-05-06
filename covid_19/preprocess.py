@@ -3,15 +3,18 @@ import csv
 import sys
 import json
 import time
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, join, isdir
 import pandas as pd
+from indra.util import zip_string
 from indra_db.client.readonly import get_statement_jsons_from_papers
+
 
 basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-04-24')
 
 
 def get_path(subdir):
     return join(basepath, subdir, subdir)
+
 
 paths = {'pmc_comm': get_path('comm_use_subset'),
          'pmc_noncomm': get_path('noncomm_use_subset'),
@@ -25,9 +28,35 @@ metadata_file = join(basepath, 'metadata.csv')
 doc_df = None
 
 
+def get_zip_texts_for_entry(md_entry):
+    texts = []
+    if md_entry['full_text_file']:
+        content_dir = join(basepath, md_entry['full_text_file'],
+                           md_entry['full_text_file'])
+        if md_entry['has_pdf_parse']:
+            filenames = [s.strip() for s in md_entry['sha'].split(';')]
+            pdf_texts = []
+            for filename in filenames:
+                filename = f"{filename}.json"
+                content_path = join(content_dir, 'pdf_json', filename)
+                pdf_texts.append(get_text_from_json(content_path))
+            combined_text = '\n'.join(pdf_texts)
+            texts.append(('cord19_pdf', 'fulltext', zip_string(combined_text)))
+        if md_entry['has_pmc_xml_parse']:
+            filename =  f"{md_entry['pmcid'].upper()}.xml.json"
+            content_path = join(content_dir, 'pmc_json', filename)
+            text = get_text_from_json(content_path)
+            texts.append(('cord19_pmc_xml', 'fulltext', zip_string(text)))
+    if md_entry['abstract']:
+        text = md_entry['abstract']
+        texts.append(('cord19_abstract', 'abstract', zip_string(text)))
+    return texts
+
+
 def get_metadata_df():
     file_data = []
     hashes = []
+    """
     for content_type, content_path in paths.items():
         for filename in os.listdir(content_path):
             if filename.endswith('.json'):
@@ -36,6 +65,7 @@ def get_metadata_df():
                 file_data.append((content_path, content_type))
     file_df = pd.DataFrame(file_data, index=hashes, dtype='str',
                            columns=['content_path', 'content_type'])
+    """
     dtype_dict = {
             'cord_uid': 'object',
             'sha': 'object',
@@ -56,10 +86,12 @@ def get_metadata_df():
             'full_text_file': 'object',
             'url': 'object',
     }
-    metadata = pd.read_csv(metadata_file, dtype=dtype_dict,
+    md = pd.read_csv(metadata_file, dtype=dtype_dict,
                            parse_dates=['publish_time'])
-    file_data = metadata.join(file_df, 'sha')
-    return file_data
+    md = md.where(md.notnull(), None)
+    #file_data = metadata.join(file_df, 'sha')
+    #return file_data
+    return md
 
 
 def get_ids(id_type):
@@ -88,9 +120,10 @@ def get_text_from_json(json_filename):
     text = ''
     text += doc_json['metadata']['title']
     text += '.\n'
-    for p in doc_json['abstract']:
-        text += p['text']
-        text += '\n'
+    if 'abstract' in doc_json:
+        for p in doc_json['abstract']:
+            text += p['text']
+            text += '\n'
     for p in doc_json['body_text']:
         text += p['text']
         text += '\n'

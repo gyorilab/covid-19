@@ -1,4 +1,5 @@
 import os
+import csv
 import time
 import json
 import zlib
@@ -269,7 +270,7 @@ def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-24'):
             # the statement text ref dict
             tr_dict.update(tr_md)
             tr_dicts[tr.id] = tr_dict
-    return tr_dicts
+    return tr_dicts, multiple_tr_ids
 
 
 def combine_all_stmts(pkl_list, output_file):
@@ -302,7 +303,7 @@ if __name__ == '__main__':
     # articles
     text_refs = get_unique_text_refs()
     md = get_metadata_dict()
-    tr_dicts = cord19_metadata_for_trs(text_refs, md)
+    tr_dicts, multiple_tr_ids = cord19_metadata_for_trs(text_refs, md)
 
     if args.mode == 'stmts':
         db_stmts = dump_raw_stmts(tr_dicts, db_stmts_file)
@@ -315,4 +316,11 @@ if __name__ == '__main__':
         # Dump tr_dicts as JSON file
         with open('tr_dicts.json', 'wt') as f:
             json.dump(tr_dicts, f, indent=2)
-
+        multiple_trs = [('trid', 'pmid', 'pmcid', 'doi', 'manuscript_id')]
+        for tr_set in multiple_tr_ids:
+            for tr in tr_set:
+                tr_data = (tr.id, tr.pmid, tr.pmcid, tr.doi, tr.manuscript_id)
+                multiple_trs.append(tr_data)
+        with open('multiple_tr_ids.csv', 'wt') as f:
+            csvwriter = csv.writer(f, delimiter=',')
+            csvwriter.writerows(multiple_trs)
