@@ -4,13 +4,14 @@ from copy import copy
 from os.path import join, dirname, abspath
 from indra.tools import assemble_corpus as ac
 
+
 def stmts_by_text_refs(stmt_list):
     by_tr = {}
     no_tr = []
     for stmt in stmt_list:
-        if len(stmt.evidence) > 1:
-            raise ValueError('Statement has more than 1 evidence; '
-                             'pass raw stmts')
+        #if len(stmt.evidence) > 1:
+        #    raise ValueError('Statement has more than 1 evidence; '
+        #                     'pass raw stmts')
         tr = stmt.evidence[0].text_refs.get('TRID')
         if tr is None:
             no_tr.append(stmt)
@@ -39,8 +40,8 @@ if __name__ == '__main__':
     #            -g stmts/gordon_ndex_stmts.pkl
     #            -f stmts/cord19_combined_stmts.pkl
     parser = argparse.ArgumentParser(
-            description='Put together updated EMMAA Statements for COVID-19 '
-                        'model.')
+            description='Put together updated statement pkl for COVID-19 '
+                        'EMMAA model.')
     parser.add_argument('-om', '--old_mm',
                         help='Name of old Model Manager pkl file',
                         required=True)
