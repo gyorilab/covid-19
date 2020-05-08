@@ -31,7 +31,7 @@ def get_mesh_children(mesh_id):
     for parent_tn in parent_tns:
         for tn, m_id in mesh_tree_to_id.items():
             if tn.startswith(parent_tn):
-                children.append((m_id, get_mesh_name(m_id)))
+                children.append(m_id)
     return children
 
 
@@ -46,6 +46,13 @@ def get_cord_info():
             if md_entry.get('pubmed_id'):
                 _cord_by_pmid[md_entry['pubmed_id']] = md_entry
     return (_cord_by_doi, _cord_by_pmid)
+
+
+def get_pmids_for_mesh_terms(mesh_list):
+    db = get_primary_db()
+    res = db.select_all(db.MeshRefAnnotations.pmid,
+                        db.MeshRefAnnotations.mesh_id.in_(mesh_list))
+    return [t[0] for t in res]
 
 
 def get_tr_metadata(ev_tr_dict):
@@ -139,7 +146,21 @@ def dump_doc_files(tr_stmts, output_file_base):
         f.write(html_table)
 
 
-    
+def filter_stmts_to_pmids(stmts_by_tr, pmids):
+    filtered = {}
+    for tr, stmt_list in stmts_by_tr.items():
+        pmid = stmt_list[0].evidence[0].pmid
+        if pmid is None:
+            continue
+        if pmid in pmids:
+            filtered[tr] = stmt_list
+    return filtered
+
+
+def sort_by_uniq_stmts(stmts_by_tr):
+    return sorted([(tr, stmt_list) for tr, stmt_list in stmts_by_tr.items()],
+                  key=lambda x: len(x[1]), reverse=True)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -164,14 +185,23 @@ if __name__ == '__main__':
         uniq_stmts = pa.combine_duplicates()
         by_tr_pa[tr] = uniq_stmts
 
-    # Sort text refs by numbers of statements
-    trs_sorted = sorted([(tr, stmt_list) for tr, stmt_list in by_tr_pa.items()],
-                       key=lambda x: len(x[1]), reverse=True)
+    # Filter to MESH term for "Coronavirus"
+    mesh_id = 'D017934'
+    mesh_children = get_mesh_children(mesh_id)
+    # Include parent term in list
+    mesh_children.append(mesh_id)
+    mesh_pmids = get_pmids_for_mesh_terms(mesh_children) # SLOW!
+    # Get the subset of statements from these PMIDs
+    mesh_stmts = filter_stmts_to_pmids(by_tr_pa, mesh_pmids)
 
-    # Filter to MESH term
+    # Sort text refs by numbers of statements
+    all_stmts_sorted = sort_by_uniq_stmts(by_tr_pa)
+    mesh_stmts_sorted = sort_by_uniq_stmts(mesh_stmts)
 
     all_refs_file_base = f'{args.output_base}_all'
-    dump_doc_files(trs_sorted, all_refs_file_base)
-
+    corona_refs_file_base = f'{args.output_base}_corona'
+    # Dump. Can be SLOW as many lookups to CrossRef may be required
+    dump_doc_files(all_stmts_sorted, all_refs_file_base)
+    dump_doc_files(mesh_stmts_sorted, corona_refs_file_base)
 
 
