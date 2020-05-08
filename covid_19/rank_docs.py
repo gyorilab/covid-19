@@ -5,7 +5,7 @@ from indra.literature import crossref_client, pubmed_client
 from indra.preassembler import Preassembler
 from indra.preassembler.hierarchy_manager import hierarchies
 from indra.tools import assemble_corpus as ac
-from indra.databases.mesh_client import mesh_id_to_tree_numbers
+from indra.databases.mesh_client import mesh_id_to_tree_numbers, get_mesh_name
 from indra_db import get_primary_db
 from covid_19.emmaa_update import stmts_by_text_refs
 from covid_19.preprocess import get_metadata_dict
@@ -22,6 +22,17 @@ def get_mesh_tree_to_id():
             for tree_num in tree_num_list:
                 _mesh_tree_to_id[tree_num] = mesh_id
     return _mesh_tree_to_id
+
+
+def get_mesh_children(mesh_id):
+    parent_tns = mesh_id_to_tree_numbers[mesh_id]
+    children = []
+    mesh_tree_to_id = get_mesh_tree_to_id()
+    for parent_tn in parent_tns:
+        for tn, m_id in mesh_tree_to_id.items():
+            if tn.startswith(parent_tn):
+                children.append((m_id, get_mesh_name(m_id)))
+    return children
 
 
 def get_cord_info():
@@ -128,7 +139,6 @@ def dump_doc_files(tr_stmts, output_file_base):
         f.write(html_table)
 
 
-def get_mesh_children(mesh_id):
     
 
 if __name__ == '__main__':
