@@ -1,10 +1,13 @@
 import os
 import gilda
 import pandas
+import pickle
 from collections import defaultdict
 from indra.statements import Agent, Inhibition, Evidence
 from indra.preassembler.grounding_mapper.standardize \
     import standardize_agent_name
+from emmaa.model_tests import StatementCheckingTest
+
 
 here = os.path.dirname(os.path.abspath(__file__))
 relations_fname = os.path.join(here, os.pardir, 'data', 'relationAllAll.csv')
@@ -33,7 +36,7 @@ virus_grounding_map = {
     'murine CoV': 'MESH:D006517',  # check
     'Nipah': 'MESH:D045405',
     'porcine CoV': 'MESH:D045722',  # check
-    'Rift Valley': 'MESH:D012296',  # check
+    'Rift Valley': 'MESH:D012296',
     'SARS-CoV': 'MESH:D045473',
     'SARS-CoV-2': 'MESH:C000656484',
     'Zika virus': 'MESH:D000071244',
@@ -126,3 +129,9 @@ if __name__ == '__main__':
         get_with_drug_statement(rels[rel_id], evs[rel_id])
         for rel_id in with_drug_rels
     ]
+    test_stmts = [StatementCheckingTest(stmt)
+                  for stmt in with_drug_stmts]
+    test_fname = os.path.join(here, os.pardir, 'stmts',
+                              'covid19_mitre_tests.pkl')
+    with open(test_fname, 'wb') as fh:
+        pickle.dump(test_stmts, fh)
