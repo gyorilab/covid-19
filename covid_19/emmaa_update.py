@@ -33,17 +33,17 @@ def combine_stmts(new_cord_by_tr, old_mm_by_tr):
 
 if __name__ == '__main__':
     # Example:
-    # run covid_19/emmaa_update.py
-    #            -om stmts/model_2020-04-02-17-01-44.pkl
-    #            -nc stmts/cord19_all_db_raw_stmts.pkl
-    #            -d stmts/drug_stmts.pkl
-    #            -g stmts/gordon_ndex_stmts.pkl
+    # python covid_19/emmaa_update.py \
+    #            -om stmts/model_2020-05-17-17-10-07.pkl \
+    #            -nc stmts/cord19_all_db_raw_stmts.pkl \
+    #            -d stmts/drug_stmts.pkl \
+    #            -g stmts/gordon_ndex_stmts.pkl \
     #            -f stmts/cord19_combined_stmts.pkl
     parser = argparse.ArgumentParser(
             description='Put together updated statement pkl for COVID-19 '
                         'EMMAA model.')
     parser.add_argument('-om', '--old_mm',
-                        help='Name of old Model Manager pkl file',
+                        help='Name of old EMMAA model pkl file',
                         required=True)
     parser.add_argument('-nc', '--new_cord',
                         help='Name of new CORD-19 DB stmts pkl file',
