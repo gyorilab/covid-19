@@ -28,7 +28,7 @@ metadata_file = join(basepath, 'metadata.csv')
 doc_df = None
 
 
-def get_zip_texts_for_entry(md_entry):
+def get_zip_texts_for_entry(md_entry, zip=True):
     texts = []
     if md_entry['full_text_file']:
         content_dir = join(basepath, md_entry['full_text_file'],
@@ -41,15 +41,21 @@ def get_zip_texts_for_entry(md_entry):
                 content_path = join(content_dir, 'pdf_json', filename)
                 pdf_texts.append(get_text_from_json(content_path))
             combined_text = '\n'.join(pdf_texts)
-            texts.append(('cord19_pdf', 'fulltext', zip_string(combined_text)))
+            if zip:
+                combined_text = zip_string(combined_text)
+            texts.append(('cord19_pdf', 'fulltext', combined_text))
         if md_entry['has_pmc_xml_parse']:
             filename =  f"{md_entry['pmcid'].upper()}.xml.json"
             content_path = join(content_dir, 'pmc_json', filename)
             text = get_text_from_json(content_path)
-            texts.append(('cord19_pmc_xml', 'fulltext', zip_string(text)))
+            if zip:
+                text = zip_string(text)
+            texts.append(('cord19_pmc_xml', 'fulltext', text))
     if md_entry['abstract']:
         text = md_entry['abstract']
-        texts.append(('cord19_abstract', 'abstract', zip_string(text)))
+        if zip:
+            text = zip_string(txt)
+        texts.append(('cord19_abstract', 'abstract', text))
     return texts
 
 
