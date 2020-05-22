@@ -50,12 +50,13 @@ def get_element_references(element):
     return [(ref.get('type'), ref.get('resource')) for ref in refs]
 
 
-if __name__ == '__main__':
-    config = get_config(default_map_name)
+def get_all_valid_element_refs(map_name=default_map_name):
+    config = get_config(map_name)
     project_id = get_project_id_from_config(config)
-    models = get_models(project_id, default_map_name)
+    models = get_models(project_id, map_name)
     all_model_elements = get_all_model_elements(models, project_id,
-                                                default_map_name)
+                                                map_name)
     element_refs = [get_element_references(element) for element
                     in all_model_elements]
     valid_element_refs = [ref for ref in element_refs if ref]
+    return valid_element_refs
