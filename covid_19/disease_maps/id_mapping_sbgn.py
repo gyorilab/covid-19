@@ -1,3 +1,6 @@
+"""This script maps identifiers URLs of entities based on the SBGN export of
+the disease maps by Augustin Luna to INDRA-compatible IDs, and then finds
+entities in the Covid-19 EMMAA model that match these entities."""
 import json
 import pandas
 import requests
