@@ -25,12 +25,7 @@ def get_bigg_chebi_mappings():
     return dict(mappings)
 
 
-if __name__ == '__main__':
-    # Get INDRA statements from latest EMMAA model
-    s3 = get_s3_client(unsigned=True)
-    latest_model_json = find_latest_s3_file('emmaa', 'assembled/covid19')
-    stmts_obj = s3.get_object(Bucket='emmaa', Key=latest_model_json)
-    stmts = stmts_from_json(json.loads(stmts_obj['Body'].read().decode('utf-8')))
+def get_groundings_set_from_indra_statements(stmts):
     indra_groundings = set()
     for stmt in stmts:
         for agent in stmt.agent_list():
@@ -39,14 +34,26 @@ if __name__ == '__main__':
             for k, v in agent.db_refs.items():
                 if k not in {'TEXT', 'TEXT_NORM'}:
                     indra_groundings.add((k, v))
+    return indra_groundings
 
+
+def get_emmaa_model_statements(model):
+    s3 = get_s3_client(unsigned=True)
+    latest_model_json = find_latest_s3_file('emmaa', 'assembled/%s' % model)
+    stmts_obj = s3.get_object(Bucket='emmaa', Key=latest_model_json)
+    stmts = stmts_from_json(json.loads(stmts_obj['Body'].read().decode('utf-8')))
+    return stmts
+
+
+def get_disease_maps_urls_cannin():
     # Read disease maps URLs
     url = ('https://raw.githubusercontent.com/cannin/covid19-analysis/'
            'master/disease_maps_ids.txt')
     dm_urls = requests.get(url).text.split('\n')[:-1]
+    return dm_urls
 
-    bigg_to_chebi = get_bigg_chebi_mappings()
 
+def align_identifiers_urls(indra_groundings, dm_urls):
     matches = []
     identifiers_prefix = 'https://identifiers.org/'
     for dm_url in dm_urls:
@@ -94,6 +101,19 @@ if __name__ == '__main__':
 
         matches.append((dm_url,
                         get_identifiers_url(*matched) if matched else None))
+    return matches
+
+
+if __name__ == '__main__':
+    bigg_to_chebi = get_bigg_chebi_mappings()
+    # Get INDRA statements from latest EMMAA model
+    stmts = get_emmaa_model_statements('covid-19')
+    indra_groundings = get_groundings_set_from_indra_statements(stmts)
+    # Get disease maps identifiers URLs
+    dm_urls = get_disease_maps_urls_cannin()
+    # Align the two
+    matches = align_identifiers_urls(indra_groundings, dm_urls)
+    # Dump the results
     with open('diseasemap_indra_mappings.csv', 'w') as fh:
         for m1, m2 in matches:
             fh.write('%s,%s\n' % (m1, m2 if m2 else ''))
