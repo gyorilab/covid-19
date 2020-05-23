@@ -24,30 +24,33 @@ def resolve_complex(element):
         return []
     groundings = []
     for part in parts:
-        matches = gilda.ground(part)
-        if matches:
-            groundings.append(matches[0].term)
-        else:
-            groundings.append(None)
+        term = ground_simple_txt(part)
+        groundings.append(term)
     return groundings
+
+
+def ground_simple_txt(txt):
+    # Try the SARS-CoV-2 protein mappings first
+    refs = mappings.get(txt)
+    if refs:
+        return Term(norm_text=txt, text=txt,
+                    db='UP', id=refs['UP'],
+                    entry_name=txt, source='manual',
+                    status='synonym')
+    matches = gilda.ground(txt)
+    if matches:
+        return matches[0].term
+    return None
 
 
 def ground_element(element):
     txt = element['name'].replace('\n', ' ')
+    term = ground_simple_txt(txt)
 
-    # Try the SARS-CoV-2 protein mappings first
-    refs = mappings.get(txt)
-    if refs:
-        return [Term(norm_text=txt, text=txt,
-                     db='UP', id=refs['UP'],
-                     entry_name=txt, source='manual',
-                     status='synonym')]
-    matches = gilda.ground(txt)
-    if matches:
-        return [matches[0].term]
-    if element['type'] == 'Complex':
+    if not term and element['type'] == 'Complex':
         return resolve_complex(element)
-    return []
+    else:
+        return [term]
 
 
 def dump_results(fname, groundings, models):
