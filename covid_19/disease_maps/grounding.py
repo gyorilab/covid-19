@@ -8,6 +8,13 @@ from covid_19.disease_maps.minerva_client import default_map_name, \
     get_project_id_from_config
 
 
+text_mappings = {
+    'MAPK8/14': 'MAPK8/MAPK14',
+    'S': 'Spike',
+    'SPIKE': 'Spike'
+}
+
+
 def get_ungrounded_elements(model_id, project_id, map_name=default_map_name):
     model_elements = get_model_elements(model_id, project_id, map_name)
     ungrounded = [element for element in model_elements
@@ -31,27 +38,38 @@ def resolve_complex(element):
 
 
 def ground_simple_txt(txt):
+    txt = sanitize_name(txt)
+
+    if txt in text_mappings:
+        txt = text_mappings[txt]
+
     # Try the SARS-CoV-2 protein mappings first
     refs = mappings.get(txt)
     if refs:
         return Term(norm_text=txt, text=txt,
-                    db='UP', id=refs['UP'],
+                    db='UNIPROT', id=refs['UP'],
                     entry_name=txt, source='manual',
                     status='synonym')
     matches = gilda.ground(txt)
     if matches:
-        return matches[0].term
+        term = matches[0].term
+        if term.db == 'UP':
+            term.db = 'UNIPROT'
+        return term
     return None
 
 
 def ground_element(element):
-    txt = element['name'].replace('\n', ' ')
-    term = ground_simple_txt(txt)
+    term = ground_simple_txt(element['name'])
 
     if not term and element['type'] == 'Complex':
         return resolve_complex(element)
     else:
         return [term]
+
+
+def sanitize_name(txt):
+    return txt.replace('\n', ' ')
 
 
 def dump_results(fname, groundings, models):
@@ -77,7 +95,8 @@ def dump_results(fname, groundings, models):
             else:
                 ref_type = ref_resource = standard_name = ''
             row = [model['idObject'], model['name'],
-                   element['id'], element['name'], element['type'],
+                   element['id'], sanitize_name(element['name']),
+                   element['type'],
                    ref_type, ref_resource, standard_name, '']
             rows.append(row)
 
