@@ -1,10 +1,11 @@
 import os
+import json
 import gilda
 import pandas
 import pickle
 from collections import defaultdict
 from indra.statements import Agent, Inhibition, Evidence
-from indra.preassembler.grounding_mapper.standardize \
+from indra.ontology.standardize \
     import standardize_agent_name
 from emmaa.model_tests import StatementCheckingTest
 
@@ -110,12 +111,20 @@ def get_with_drug_statement(rel, evidences):
 def get_evidence(ev):
     annot_args = ['pubIDRelationScore', 'sentenceRelationScore',
                   'researchStage']
+    # TODO: handle DOIs
     return Evidence(
         source_api='mitre_covid',
         text=ev.get('sentence'),
         pmid=ev.get('articleID'),
         annotations={arg: ev.get(arg) for arg in annot_args}
     )
+
+
+def get_rel_hash_map(with_drug_rels, test_stmts):
+    hash_map = {}
+    for rel_id, sc in zip(with_drug_rels, test_stmts):
+        hash_map[rel_id] = sc.to_json()['matches_hash']
+    return hash_map
 
 
 if __name__ == '__main__':
@@ -131,7 +140,15 @@ if __name__ == '__main__':
     ]
     test_stmts = [StatementCheckingTest(stmt)
                   for stmt in with_drug_stmts]
+
+    rel_to_hash_map = get_rel_hash_map(with_drug_rels,
+                                       test_stmts)
+    with open(
+            os.path.join(here, os.pardir,
+                         'covid19_mitre_tests_rel_to_hash.json'), 'w') as fh:
+        json.dump(rel_to_hash_map, fh, indent=1)
+
     test_fname = os.path.join(here, os.pardir, 'stmts',
                               'covid19_mitre_tests.pkl')
-    with open(test_fname, 'wb') as fh:
-        pickle.dump(test_stmts, fh)
+    #with open(test_fname, 'wb') as fh:
+    #    pickle.dump(test_stmts, fh)
