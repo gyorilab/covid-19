@@ -29,7 +29,7 @@ def get_models(project_id, map_name=default_map_name):
 def get_model_elements(model_id, project_id, map_name=default_map_name):
     url = (base_url % map_name) + \
         ('projects/%s/models/%s/' % (project_id, model_id)) + \
-        'bioEntities/elements/?columns=id,name,type,references,bounds'
+        'bioEntities/elements/?columns=id,name,type,references'
     res = requests.get(url)
     res.raise_for_status()
     return res.json()
