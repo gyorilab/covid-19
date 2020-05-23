@@ -31,7 +31,15 @@ The results are dumped into a comma-separated value table available at
 https://github.com/indralab/covid-19/blob/master/covid_19/disease_maps/grounding/groundings.csv
 (the table is wide so if you're looking at it on the web, make sure
 to scroll to the right to see the results).
+
 The structure of this table is as follows: each row provides the ID and
 the name of the model in which the given element appears. It also provides
-the ID and name and type of the element as it appears in the model.
-
+the ID and name and type of the element as it appears in the model. The
+`reference_type` and `reference_resource` columns ar the key results of
+grounding. For simple entities, there is a single entry in each of these
+columns, i.e., `HGNC`, and `30707` respectively. For Complex entities
+with multiple components, the values in each column are separated by `/`.
+For instance, for `p50_p65`, the two columns contain
+`HGNC/HGNC` and `7794/9955`, respectively.
+Finally, the last column, `standard_name` provides the standardized name(s)
+associated with the groundings as reference.
