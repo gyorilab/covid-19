@@ -85,5 +85,8 @@
  },
  "P-glycoprotein": {
   "HGNC": "40"
+ },
+ "MERS" : {
+  "MESH": "D065207"
  }
 }

@@ -24,11 +24,11 @@ def get_ungrounded_elements(model_id, project_id, map_name=default_map_name):
     return ungrounded
 
 
-def resolve_complex(element):
+def resolve_complex(txt):
     split_chars = [':', '_', '/']
     for split_char in split_chars:
-        if split_char in element['name']:
-            parts = element['name'].split(split_char)
+        if split_char in txt:
+            parts = txt.split(split_char)
             break
     else:
         return []
@@ -41,9 +41,6 @@ def resolve_complex(element):
 
 def ground_simple_txt(txt):
     txt = sanitize_name(txt)
-
-    if txt in text_mappings:
-        txt = text_mappings[txt]
 
     # Try the SARS-CoV-2 protein mappings first
     refs = mappings.get(txt)
@@ -70,10 +67,14 @@ def ground_simple_txt(txt):
 
 
 def ground_element(element):
-    term = ground_simple_txt(element['name'])
+    txt = element['name']
+    if txt in text_mappings:
+        txt = text_mappings[txt]
+
+    term = ground_simple_txt(txt)
 
     if not term and element['type'] == 'Complex':
-        return resolve_complex(element)
+        return resolve_complex(txt)
     else:
         return [term]
 
