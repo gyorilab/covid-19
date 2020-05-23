@@ -7,7 +7,7 @@ model_id,model_name,entity_id,entity_name,entity_type,reference_type,reference_r
 264,Interferon 1 pathway,43800,p50_p65,Complex,HGNC/HGNC,7794/9955,NFKB1/RELA
 264,Interferon 1 pathway,43809,MERS 5,Protein,,,
 264,Interferon 1 pathway,43810,Viral RNA,Simple molecule,MESH,D012367,"RNA, Viral"
-264,Interferon 1 pathway,43811,MAPK8/14,Complex,HGNC/CHEBI,6881/CHEBI:28875,MAPK8/tetradecanoic acid
+264,Interferon 1 pathway,43811,MAPK8/14,Complex,HGNC/HGNC,6881/6876,MAPK8/MAPK14
 264,Interferon 1 pathway,43820,SARS N,Protein,,,
 264,Interferon 1 pathway,43823,MYD88_TCAM1,Complex,HGNC/HGNC,7562/30707,MYD88/TCAM1P
 264,Interferon 1 pathway,43825,TCAM1,Protein,HGNC,30707,TCAM1P
