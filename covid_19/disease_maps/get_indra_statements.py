@@ -1,6 +1,15 @@
 import pickle
 from indra.sources import indra_db_rest
 
+# List of entities that are not of interest to get INDRA Statements
+# e.g., ATP, oxygen
+black_list = {
+    ('CHEBI', 'CHEBI:16335'),
+    ('CHEBI', 'CHEBI:16335'),
+    ('CHEBI', 'CHEBI:16335'),
+    ('CHEBI', 'CHEBI:16761'),
+}
+
 
 def get_stmts_by_grounding(db_ns, db_id):
     ip = indra_db_rest.get_statements(agents=['%s@%s' % (db_id, db_ns)],
@@ -10,7 +19,7 @@ def get_stmts_by_grounding(db_ns, db_id):
 
 
 def filter_prior_all(stmts, groundings):
-    groundings = set(groundings)
+    groundings = {tuple(g) for g in groundings}
     filtered_stmts = []
     for stmt in stmts:
         stmt_groundings = {a.get_grounding() for a in stmt.agent_list()
@@ -20,12 +29,18 @@ def filter_prior_all(stmts, groundings):
     return filtered_stmts
 
 
+def make_unique_hashes(stmts):
+    return list({stmt.get_hash(): stmt for stmt in stmts}.values())
+
+
 if __name__ == '__main__':
     with open('minerva_disease_map_indra_ids.csv', 'r') as fh:
         groundings = [line.strip().split(',') for line in fh.readlines()]
     all_stmts = []
     for db_ns, db_id in groundings:
         all_stmts += get_stmts_by_grounding(db_ns, db_id)
+    all_stmts = make_unique_hashes(all_stmts)
+
     with open('disease_map_indra_stmts_full.pkl', 'wb') as fh:
         pickle.dump(all_stmts, fh)
 
