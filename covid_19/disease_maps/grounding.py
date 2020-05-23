@@ -1,5 +1,6 @@
 import csv
 import gilda
+from collections import Counter
 from gilda.grounder import Term
 from covid_19.process_gordon_ndex import mappings
 from covid_19.disease_maps.minerva_client import default_map_name, \
@@ -10,7 +11,7 @@ from covid_19.disease_maps.minerva_client import default_map_name, \
 def get_ungrounded_elements(model_id, project_id, map_name=default_map_name):
     model_elements = get_model_elements(model_id, project_id, map_name)
     ungrounded = [element for element in model_elements
-                   if not element.get('references')]
+                  if not element.get('references')]
     return ungrounded
 
 
@@ -60,6 +61,7 @@ def dump_results(fname, groundings, models):
               'primary_standard_name',
               'all_references']
     rows = [header]
+    stats = []
     for model in models:
         # Skip the overview model
         if model['name'] == 'overview':
@@ -78,6 +80,19 @@ def dump_results(fname, groundings, models):
                    element['id'], element['name'], element['type'],
                    ref_type, ref_resource, standard_name, '']
             rows.append(row)
+
+            if not ref_resource or not any(ref_resource.split('/')):
+                stats.append('ungrounded')
+            elif '/' in ref_resource and not all(ref_resource.split('/')):
+                stats.append('partial')
+            else:
+                stats.append('grounded')
+    cnt = Counter(stats)
+    print('Total entities: %d' % sum(cnt.values()))
+    print('Fully grounded: %s' % cnt['grounded'])
+    print('Partially grounded: %s' % cnt['partial'])
+    print('Ungrounded: %s' % cnt['ungrounded'])
+
     with open(fname, 'w') as fh:
         writer = csv.writer(fh)
         writer.writerows(rows)
@@ -105,4 +120,4 @@ if __name__ == '__main__':
                      'name': grounded_term.entry_name if grounded_term else ''
                      }
                 )
-    dump_results('groundings_v1.csv', ungrounded_per_model, models)
+    dump_results('groundings.csv', ungrounded_per_model, models)
