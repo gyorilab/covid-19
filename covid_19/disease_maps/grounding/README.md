@@ -1,5 +1,5 @@
-Finding missing references using named entity normalization (grounding)
-=======================================================================
+Finding missing references for disease map elements using named entity normalization (grounding)
+================================================================================================
 The `grounding.py` script uses the Gilda system
 (https://github.com/indralab/gilda) to ground (i.e., find references for)
 named entities in the Covid-19 disease maps.
