@@ -12,11 +12,32 @@ def get_ungrounded_elements(model_id, project_id, map_name=default_map_name):
     return ungrounded
 
 
+def resolve_complex(element):
+    split_chars = [':', '_', '/']
+    for split_char in split_chars:
+        if split_char in element['name']:
+            parts = element['name'].split(split_char)
+            break
+    else:
+        return []
+    groundings = []
+    for part in parts:
+        matches = gilda.ground(part)
+        if matches:
+            groundings.append(matches[0].term)
+        else:
+            groundings.append(None)
+    return groundings
+
+
 def ground_element(element):
+    element['name'] = element['name'].replace('\n', ' ')
     matches = gilda.ground(element['name'])
-    if not matches:
-        return None
-    return matches[0].term
+    if matches:
+        return [matches[0].term]
+    if element['type'] == 'Complex':
+        return resolve_complex(element)
+    return []
 
 
 def dump_results(fname, groundings, models):
@@ -27,18 +48,22 @@ def dump_results(fname, groundings, models):
               'all_references']
     rows = [header]
     for model in models:
+        # Skip the overview model
+        if model['name'] == 'overview':
+            continue
         for element in groundings[model['idObject']]:
             if element['references']:
-                primary_ref_type = element['references'][0]['type']
-                primary_ref_resource = element['references'][0]['resource']
-                primary_standard_name = element['references'][0]['name']
+                ref_type = '/'.join(ref['type']
+                                    for ref in element['references'])
+                ref_resource = '/'.join(ref['resource']
+                                        for ref in element['references'])
+                standard_name = '/'.join(ref['name']
+                                         for ref in element['references'])
             else:
-                primary_ref_type = primary_ref_resource = \
-                    primary_standard_name = ''
+                ref_type = ref_resource = standard_name = ''
             row = [model['idObject'], model['name'],
                    element['id'], element['name'], element['type'],
-                   primary_ref_type, primary_ref_resource,
-                   primary_standard_name, '']
+                   ref_type, ref_resource, standard_name, '']
             rows.append(row)
     with open(fname, 'w') as fh:
         writer = csv.writer(fh)
@@ -51,17 +76,20 @@ if __name__ == '__main__':
     models = get_models(project_id, default_map_name)
     ungrounded_per_model = {}
     for model in models:
+        # Skip the overview model
+        if model['name'] == 'overview':
+            continue
         model_id = model['idObject']
         ungrounded_per_model[model_id] = \
             get_ungrounded_elements(model_id, project_id, default_map_name)
         for element in ungrounded_per_model[model_id]:
-            grounded_term = ground_element(element)
-            if grounded_term:
+            grounded_terms = ground_element(element)
+            for grounded_term in grounded_terms:
                 element['references'].append(
                     {
-                     'resource': grounded_term.id,
-                     'type': grounded_term.db,
-                     'name': grounded_term.entry_name
+                     'resource': grounded_term.id if grounded_term else '',
+                     'type': grounded_term.db if grounded_term else '',
+                     'name': grounded_term.entry_name if grounded_term else ''
                      }
                 )
     dump_results('groundings_v1.csv', ungrounded_per_model, models)
