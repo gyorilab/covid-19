@@ -1,5 +1,7 @@
 import csv
 import gilda
+from gilda.grounder import Term
+from covid_19.process_gordon_ndex import mappings
 from covid_19.disease_maps.minerva_client import default_map_name, \
     get_model_elements, get_models, get_config, \
     get_project_id_from_config
@@ -31,8 +33,16 @@ def resolve_complex(element):
 
 
 def ground_element(element):
-    element['name'] = element['name'].replace('\n', ' ')
-    matches = gilda.ground(element['name'])
+    txt = element['name'].replace('\n', ' ')
+
+    # Try the SARS-CoV-2 protein mappings first
+    refs = mappings.get(txt)
+    if refs:
+        return [Term(norm_text=txt, text=txt,
+                     db='UP', id=refs['UP'],
+                     entry_name=txt, source='manual',
+                     status='synonym')]
+    matches = gilda.ground(txt)
     if matches:
         return [matches[0].term]
     if element['type'] == 'Complex':
