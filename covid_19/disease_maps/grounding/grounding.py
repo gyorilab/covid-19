@@ -1,4 +1,6 @@
+import os
 import csv
+import json
 import gilda
 from collections import Counter
 from gilda.grounder import Term
@@ -50,6 +52,14 @@ def ground_simple_txt(txt):
                     db='UNIPROT', id=refs['UP'],
                     entry_name=txt, source='manual',
                     status='synonym')
+    refs = grounding_map.get(txt)
+    if refs:
+        db_ns, db_id = list(refs.items())[0]
+        return Term(norm_text=txt, text=txt,
+                    db='UNIPROT' if db_ns == 'UP' else db_ns,
+                    id=db_id, entry_name=txt, source='manual',
+                    status='synonym')
+
     matches = gilda.ground(txt)
     if matches:
         term = matches[0].term
@@ -75,9 +85,8 @@ def sanitize_name(txt):
 def dump_results(fname, groundings, models):
     header = ['model_id', 'model_name',
               'entity_id', 'entity_name', 'entity_type',
-              'primary_reference_type', 'primary_reference_resource',
-              'primary_standard_name',
-              'all_references']
+              'reference_type', 'reference_resource',
+              'standard_name']
     rows = [header]
     stats = []
     for model in models:
@@ -97,7 +106,7 @@ def dump_results(fname, groundings, models):
             row = [model['idObject'], model['name'],
                    element['id'], sanitize_name(element['name']),
                    element['type'],
-                   ref_type, ref_resource, standard_name, '']
+                   ref_type, ref_resource, standard_name]
             rows.append(row)
 
             if not ref_resource or not any(ref_resource.split('/')):
@@ -118,6 +127,11 @@ def dump_results(fname, groundings, models):
 
 
 if __name__ == '__main__':
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, os.pardir, os.pardir, os.pardir,
+                           'grounding_map.json'), 'r') as fh:
+        grounding_map = json.load(fh)
+
     config = get_config(default_map_name)
     project_id = get_project_id_from_config(config)
     models = get_models(project_id, default_map_name)
