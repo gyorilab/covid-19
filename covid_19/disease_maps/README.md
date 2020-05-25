@@ -1,15 +1,15 @@
-INDRA Statements aligned with Covid-19 Disease Maps
-===================================================
+# INDRA Statements aligned with Covid-19 Disease Maps
 
-The `get_indra_statements.py` script uses a list of entities in the disease
-maps obtained from Minerva to find relevant INDRA Statements. There are two
+The `get_indra_statements.py` script uses a list of entities in the
+COVID-19 Disease
+Maps (https://covid19map.elixir-luxembourg.org/minerva/) obtained
+through the Minerva API to find relevant INDRA Statements. There are two
 dumps of these statements: a `full` one which contains all INDRA Statements
 that contain at least one of the disease maps entities, and a `filtered`
 one which only contains INDRA Statements whose entities are all in the
 disease maps.
 
-Availability
-~~~~~~~~~~~~
+## Availability
 
 The query for all entities yields a total of 656,418 INDRA Statements.
 These statements are available as a gzipped JSON dump at
@@ -31,16 +31,15 @@ Statement objects directly) at
 
 - https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_filtered.pkl
 
-How is this different from the Covid-19 EMMAA model?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### How is this different from the Covid-19 EMMAA model?
 The model at https://emmaa.indra.bio/dashboard/covid19?tab=model is also
 built from INDRA Statements but it is (largely) based on the content
-of papers from the CORD-19 corpus of documents and isn't derived from entities
+of papers from the CORD-19 corpus (https://www.kaggle.com/allen-institute-for-ai/CORD-19-research-challenge)
+of documents and isn't derived from entities
 appearing in the Disease Maps. Therefore this dump which is based on entities
 in the Disease Maps is more relevant for this particular use case.
 
-Method
-------
+## Method
 The `id_mapping_minerva.py` script is used to get all the elements of
 the Disease Map models and find their IDs which are best aligned with
 ones that INDRA uses internally. This produces a list of IDs that are
@@ -57,24 +56,34 @@ INDRA Statements in which the entity appears to create the `full` corpus.
 The `filtered` corpus is obtained by filtering for Statements in which
 every Agent is also a disease maps entity.
 
-Using INDRA Statements
-----------------------
+## Using INDRA Statements
 
-Documentation and schema
-~~~~~~~~~~~~~~~~~~~~~~~~
+### Documentation and schema
 INDRA Statements are documented at https://indra.readthedocs.io/en/latest/modules/statements.html
 and the schema for the JSON export of INDRA Statements is available at:
 https://github.com/sorgerlab/indra/blob/master/indra/resources/statements_schema.json
 
-Assembly into models and networks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Browsing and curating Statements
+Each Statement in the JSON dump has a `matches_hash` attribute which
+allows linking to it in the INDRA Database web service.
+An example is https://db.indra.bio/statements/from_hash/8173962799466177?format=html
+where `8173962799466177` is the `matches_hash` of a statement.
+
+This INDRA browser page allows:
+- Reading the evidence sentences supporting the statement
+- Linking out to entity databases by clicking on the name of the agents in the statement
+- Linking out to publications from which the evidences were extracted
+- Curating statements as correct or incorrect (see guide at 
+https://indra.readthedocs.io/en/latest/tutorials/html_curation.html)
+
+### Assembly into models and networks
 If working with INDRA Statements directly is not the goal, INDRA has assemblers
 for many network and model formalisms (SBML, SBGN, PySB, BNGL, Kappa, SIF,
 CX, etc.) that can be invoked using INDRA as a Python package or as a
-REST service.
+REST service. For a full list with links to documentation, see
+https://github.com/sorgerlab/indra#output-model-assemblers.
 
-Basics of what is in a Statement
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Basics of what is in a Statement
 Each Statement has a type (e.g., Phosphorylation or Activation) and has one
 or more Agent arguments depending on the type. Each Agent is an entity which
 has a name (typically standardized like an HGNC symbol) and a set of
