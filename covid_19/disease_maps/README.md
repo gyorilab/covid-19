@@ -10,6 +10,12 @@ other entities as well), and a `filtered`
 one which only contains INDRA Statements whose entities are _all_
 in the disease maps.
 
+By May 31st we are planning to update the content of these models with a more recent
+build of the INDRA Database which will contain content from:
+- More recent publications and preprints relevant to Covid-19 specifically
+- More full-text publications in the CORD-19 corpus
+- Extended drug-target interactions
+
 ## Availability
 
 The query for all entities yields a total of 656,418 INDRA Statements.
