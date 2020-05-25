@@ -84,6 +84,17 @@ def reground_stmts(stmts, gm):
                     agent.db_refs.update(gm[txt])
 
 
+def filter_out_medscan(stmts):
+    new_stmts = []
+    for stmt in stmts:
+        new_evidence = [e for e in stmt.evidence if e.source_api != 'medscan']
+        if not new_evidence:
+            continue
+        stmt.evidence = new_evidence
+        new_stmts.append(stmt)
+    return new_stmts
+
+
 if __name__ == '__main__':
     with open('minerva_disease_map_indra_ids.csv', 'r') as fh:
         groundings = [line.strip().split(',') for line in fh.readlines()]
@@ -102,6 +113,7 @@ if __name__ == '__main__':
     reground_stmts(all_stmts, gm)
     be = BeliefEngine()
     be.set_prior_probs(all_stmts)
+    all_stmts = filter_out_medscan(all_stmts)
 
     with open('disease_map_indra_stmts_full.pkl', 'wb') as fh:
         pickle.dump(all_stmts, fh)
