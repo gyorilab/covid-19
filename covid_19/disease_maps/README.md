@@ -5,9 +5,10 @@ COVID-19 Disease
 Maps (https://covid19map.elixir-luxembourg.org/minerva/) obtained
 through the Minerva API to find relevant INDRA Statements. There are two
 dumps of these statements: a `full` one which contains all INDRA Statements
-that contain at least one of the disease maps entities, and a `filtered`
-one which only contains INDRA Statements whose entities are all in the
-disease maps.
+that contain _at least one_ of the disease maps entities (but can contain
+other entities as well), and a `filtered`
+one which only contains INDRA Statements whose entities are _all_
+in the disease maps.
 
 ## Availability
 
