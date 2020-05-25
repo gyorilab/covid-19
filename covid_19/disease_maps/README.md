@@ -32,6 +32,13 @@ Statement objects directly) at
 
 - https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_filtered.pkl
 
+### How else can I access the same INDRA content?
+If you are looking for a more targeted way to find INDRA content, you can
+- Submit specific queries on the INDRA Database website: https://db.indra.bio/statements
+or REST API
+- Ask a question from the CLARE system integrated into the Disease Maps Slack
+workspace. See some examples in http://sorger.med.harvard.edu/data/bgyori/clare_intro.mov.
+
 ### How is this different from the Covid-19 EMMAA model?
 The model at https://emmaa.indra.bio/dashboard/covid19?tab=model is also
 built from INDRA Statements but it is (largely) based on the content
