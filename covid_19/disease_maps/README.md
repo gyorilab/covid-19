@@ -15,6 +15,7 @@ build of the INDRA Database which will contain content from:
 - More recent publications and preprints relevant to Covid-19 specifically
 - More full-text publications in the CORD-19 corpus
 - Extended drug-target interactions
+- Queries for entities that are not yet fully identified in the Disease Maps (see analysis at https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps/grounding which attempts to extend these identifiers.
 
 ## Availability
 
