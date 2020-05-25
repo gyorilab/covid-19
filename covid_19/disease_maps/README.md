@@ -10,18 +10,26 @@ disease maps.
 
 Availability
 ~~~~~~~~~~~~
-The query for all entities yields a total of 707,355 INDRA Statements.
+
+The query for all entities yields a total of 656,418 INDRA Statements.
 These statements are available as a gzipped JSON dump at
+
+- https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_full.json.gz
 
 and as a Python pickle file (which can be deserialized into INDRA
 Statement objects directly) at
 
+- https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_full.pkl
 
-The filtered corpus contains 42,048 INDRA Statements.
+The filtered corpus contains 40,361 INDRA Statements.
 These statements are available as a gzipped JSON dump at
+
+- https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_filtered.json.gz
 
 and as a Python pickle file (which can be deserialized into INDRA
 Statement objects directly) at
+
+- https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_filtered.pkl
 
 How is this different from the Covid-19 EMMAA model?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
