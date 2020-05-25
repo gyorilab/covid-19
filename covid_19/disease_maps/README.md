@@ -10,14 +10,6 @@ other entities as well), and a `filtered`
 one which only contains INDRA Statements whose entities are _all_
 in the disease maps.
 
-## Plan for next update
-By May 31st we are planning to update the content of these models with a more recent
-build of the INDRA Database which will contain content from:
-- More recent publications and preprints relevant to Covid-19 specifically
-- More full-text publications in the CORD-19 corpus
-- Extended drug-target interactions
-- Queries for entities that are not yet fully identified in the Disease Maps (see analysis at https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps/grounding which attempts to extend these identifiers.
-
 ## Availability
 
 The query for all entities yields a total of 656,418 INDRA Statements.
@@ -54,6 +46,14 @@ of papers from the CORD-19 corpus (https://www.kaggle.com/allen-institute-for-ai
 of documents and isn't derived from entities
 appearing in the Disease Maps. Therefore this dump which is based on entities
 in the Disease Maps is more relevant for this particular use case.
+
+## Plan for next update
+By May 31st we are planning to update the content of these models with a more recent
+build of the INDRA Database which will contain content from:
+- More recent publications and preprints relevant to Covid-19 specifically
+- More full-text publications in the CORD-19 corpus
+- Extended drug-target interactions
+- Queries for entities that are not yet fully identified in the Disease Maps (see analysis at https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps/grounding which attempts to extend these identifiers.
 
 ## Method
 The `id_mapping_minerva.py` script is used to get all the elements of
