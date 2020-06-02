@@ -2,6 +2,7 @@
 molecules that target a given list of proteins."""
 
 import boto3
+from collections import defaultdict
 from collections import OrderedDict
 from indra.sources import tas
 from indra.sources import indra_db_rest
@@ -15,7 +16,8 @@ from indra_db import get_db
 def get_source_counts_dict():
     return OrderedDict(reach=0, phosphosite=0, pc11=0, hprd=0, medscan=0,
                        trrust=0, isi=0, signor=0, sparser=0, rlimsp=0,
-                       cbn=0, tas=0, bel_lc=0, biogrid=0, trips=0)
+                       cbn=0, tas=0, bel_lc=0, biogrid=0, trips=0,
+                       eidos=0)
 
 
 def is_small_molecule(agent):
@@ -99,18 +101,47 @@ def make_html(stmts, ev_counts, source_counts, fname):
     ha.save_model(fname)
 
 
+def make_drug_list(stmts, ev_counts):
+    agent_by_name = {}
+    counts_by_name = defaultdict(int)
+    for stmt in stmts:
+        agent_by_name[stmt.subj.name] = stmt.subj
+        counts_by_name[stmt.subj.name] += ev_counts.get(stmt.get_hash(), 0)
+    drug_list = []
+    for name, agent in sorted(agent_by_name.items(),
+                              key=lambda x: counts_by_name[x[0]],
+                              reverse=True):
+        compound = name
+        db_ns, db_id = agent.get_grounding()
+        compound += ' (%s:%s)' % (db_ns, db_id) if db_ns else ''
+        drug_list.append((compound, counts_by_name[name]))
+    with open('indra_drug_list.tsv', 'w') as fh:
+        for compound in drug_list:
+            fh.write('%s\t%s\t%s\n' % (compound[0], compound[1],
+                                       'INDRA (text mining/databases)'))
+
+
 misgrounding_map = {'CTSL': ['MEP'],
                     'CTSB': ['APPs'],
                     'FURIN': ['pace', 'Fur']}
+
 
 if __name__ == '__main__':
     db = get_db('primary')
     db_curations = get_curations(db=db)
     tp = tas.process_from_web()
     targets = ['TMPRSS2', 'ACE2', 'FURIN', 'CTSB', 'CTSL']
+    all_stmts = []
+    all_ev_counts = {}
     for target in targets:
         stmts, ev_counts, source_counts = get_statements(target)
         fname = '%s.html' % target
+        all_stmts += stmts
+        for sh, cnt in ev_counts.items():
+            if sh in all_ev_counts:
+                all_ev_counts[sh] += ev_counts[sh]
+            else:
+                all_ev_counts[sh] = ev_counts[sh]
         make_html(stmts, ev_counts, source_counts, fname)
         s3_client = boto3.client('s3')
         with open(fname, 'r') as fh:
@@ -120,3 +151,4 @@ if __name__ == '__main__':
                                  Body=html_str.encode('utf-8'),
                                  ContentType='text/html',
                                  ACL='public-read')
+    make_drug_list(all_stmts, all_ev_counts)
