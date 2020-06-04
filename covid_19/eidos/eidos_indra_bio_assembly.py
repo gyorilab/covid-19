@@ -7,7 +7,7 @@ import gilda
 import pickle
 from indra.tools import assemble_corpus as ac
 from indra.statements import Influence, Activation, Inhibition, Agent
-from indra.preassembler.grounding_mapper.standardize import \
+from indra.ontology.standardize import \
     standardize_agent_name
 
 

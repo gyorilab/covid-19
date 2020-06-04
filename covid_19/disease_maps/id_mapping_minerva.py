@@ -1,4 +1,4 @@
-"""This script relies on the minerva client to get all the entities
+"""This script relies on the Minerva client to get all the entities
 for a given project, map them to INDRA-compatible db_refs, and standardize,
 and prioritize them to find a unique grounding key that allows looking
 up INDRA statements for the given entity."""
@@ -6,7 +6,7 @@ from covid_19.disease_maps.minerva_client import \
     get_all_valid_element_refs, default_map_name
 from indra.statements.agent import default_ns_order
 from indra.preassembler.grounding_mapper.standardize import \
-    standardize_db_refs
+    standardize_db_refs, name_from_grounding
 
 
 minerva_to_indra_map = {
@@ -50,4 +50,5 @@ if __name__ == '__main__':
     keys = get_unique_prioritized_keys(default_map_name)
     with open('minerva_disease_map_indra_ids.csv', 'w') as fh:
         for db_ns, db_id in sorted(keys):
-            fh.write('%s,%s\n' % (db_ns, db_id))
+            name = name_from_grounding(db_ns, db_id)
+            fh.write('%s,%s,%s\n' % (db_ns, db_id, name))

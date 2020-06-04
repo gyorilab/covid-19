@@ -5,7 +5,7 @@ from collections import Counter
 from indra.util import write_unicode_csv
 from indra.statements import Complex
 from indra.databases import get_identifiers_url
-from indra.preassembler.grounding_mapper.standardize import name_from_grounding
+from indra.ontology.standardize import name_from_grounding
 
 
 logging.getLogger('gilda').setLevel(logging.WARNING)
