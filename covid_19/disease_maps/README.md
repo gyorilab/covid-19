@@ -48,12 +48,15 @@ appearing in the Disease Maps. Therefore this dump which is based on entities
 in the Disease Maps is more relevant for this particular use case.
 
 ## Plan for next update
-By May 31st we are planning to update the content of these models with a more recent
-build of the INDRA Database which will contain content from:
+By May 31st we are planning to update the content of these models with a more
+recent build of the INDRA Database which will contain content from:
 - More recent publications and preprints relevant to Covid-19 specifically
 - More full-text publications in the CORD-19 corpus
 - Extended drug-target interactions
-- Queries for entities that are not yet fully identified in the Disease Maps (see analysis at https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps/grounding which attempts to extend these identifiers.
+- Queries for entities that are not yet fully identified in the Disease Maps
+(see analysis at
+https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps/grounding
+which attempts to extend these identifiers.)
 
 ## Method
 The `id_mapping_minerva.py` script is used to get all the elements of
@@ -75,7 +78,8 @@ every Agent is also a disease maps entity.
 ## Using INDRA Statements
 
 ### Documentation and schema
-INDRA Statements are documented at https://indra.readthedocs.io/en/latest/modules/statements.html
+INDRA Statements are documented at
+https://indra.readthedocs.io/en/latest/modules/statements.html
 and the schema for the JSON export of INDRA Statements is available at:
 https://github.com/sorgerlab/indra/blob/master/indra/resources/statements_schema.json
 
