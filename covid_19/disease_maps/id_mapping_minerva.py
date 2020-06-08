@@ -5,8 +5,11 @@ up INDRA statements for the given entity."""
 from covid_19.disease_maps.minerva_client import \
     get_all_valid_element_refs, default_map_name
 from indra.statements.agent import default_ns_order
-from indra.preassembler.grounding_mapper.standardize import \
-    standardize_db_refs, name_from_grounding
+# NOTE: this requires using the ontology_graph branch of INDRA
+from indra.databases import chebi_client
+from indra.ontology.standardize import standardize_db_refs, get_standard_name
+#from indra.preassembler.grounding_mapper.standardize import \
+#    standardize_db_refs, name_from_grounding
 
 
 minerva_to_indra_map = {
@@ -17,11 +20,22 @@ minerva_to_indra_map = {
 }
 
 
+def fix_id_standards(db_ns, db_id):
+    if db_ns == 'CHEBI':
+        if not db_id.startswith('CHEBI:'):
+            db_id = f'CHEBI:{db_id}'
+        db_id = chebi_client.get_primary_id(db_id)
+    elif db_ns == 'HGNC' and db_id.startswith('HGNC:'):
+        db_id = db_id[5:]
+    return db_ns, db_id
+
+
 def indra_db_refs_from_minerva_refs(refs):
     db_refs = {}
     for db_ns, db_id in refs:
         db_ns = minerva_to_indra_map[db_ns] \
             if db_ns in minerva_to_indra_map else db_ns
+        db_nbs, db_id = fix_id_standards(db_ns, db_id)
         db_refs[db_ns] = db_id
     db_refs = standardize_db_refs(db_refs)
     return db_refs
@@ -50,5 +64,5 @@ if __name__ == '__main__':
     keys = get_unique_prioritized_keys(default_map_name)
     with open('minerva_disease_map_indra_ids.csv', 'w') as fh:
         for db_ns, db_id in sorted(keys):
-            name = name_from_grounding(db_ns, db_id)
+            name = get_standard_name({db_ns: db_id})
             fh.write('%s,%s,%s\n' % (db_ns, db_id, name))

@@ -3,55 +3,6 @@ import pickle
 from indra.belief import BeliefEngine
 from indra.sources import indra_db_rest
 
-# List of entities that are not of interest to get INDRA Statements
-# e.g., ATP, oxygen
-black_list = {
-    'CHEBI:58245',
-    'CHEBI:57673',
-    'CHEBI:30616',
-    'CHEBI:16174',
-    'CHEBI:35782',
-    'CHEBI:10545',
-    'CHEBI:65180',
-    'CHEBI:57600',
-    'CHEBI:58115',
-    'CHEBI:64428',
-    'CHEBI:15422',
-    'CHEBI:15379',
-    'CHEBI:16856',
-    'CHEBI:29036',
-    'CHEBI:16234',
-    'CHEBI:17245',
-    'CHEBI:17992',
-    'CHEBI:18367',
-    'CHEBI:16761',
-    'CHEBI:16474',
-    'CHEBI:16335',
-    'CHEBI:15996',
-    'CHEBI:15846',
-    'CHEBI:29356',
-    'CHEBI:17552',
-    'CHEBI:16708',
-    'CHEBI:16235',
-    'CHEBI:15377',
-    'CHEBI:15713',
-    'CHEBI:16526',
-    'CHEBI:33699',
-    'CHEBI:17659',
-    'CHEBI:16284',
-    'CHEBI:15378',
-    'CHEBI:456216',
-    'CHEBI:456215',
-    'CHEBI:16908',
-    'CHEBI:16750',
-    'CHEBI:29235',
-    'CHEBI:16497',
-    'CHEBI:13389',
-    'CHEBI:28862',
-    'CHEBI:25523',
-}
-
-
 def get_stmts_by_grounding(db_ns, db_id):
     ip = indra_db_rest.get_statements(agents=['%s@%s' % (db_id, db_ns)],
                                       ev_limit=100)
@@ -96,6 +47,11 @@ def filter_out_medscan(stmts):
 
 
 if __name__ == '__main__':
+    # List of entities that are not of interest to get INDRA Statements
+    # e.g., ATP, oxygen
+    with open('black_list.txt', 'r') as fh:
+        black_list = {line.strip() for line in fh.readlines()}
+
     with open('minerva_disease_map_indra_ids.csv', 'r') as fh:
         groundings = [line.strip().split(',') for line in fh.readlines()]
     all_stmts = []
