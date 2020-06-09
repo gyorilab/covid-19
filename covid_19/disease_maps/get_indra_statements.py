@@ -30,9 +30,9 @@ def get_tas_stmts(db_ns, db_id, allow_unnamed=False):
 
 def get_db_stmts_by_grounding(db_ns, db_id):
     ip = indra_db_rest.get_statements(agents=['%s@%s' % (db_id, db_ns)],
-                                      ev_limit=100)
+                                      ev_limit=100, max_stmts=5000)
     stmts = filter_out_source_evidence(ip.statements, {'medscan', 'tas'})
-    print('%d statements for %s:%s' % (stmts, db_ns, db_id))
+    print('%d statements for %s:%s' % (len(stmts), db_ns, db_id))
     return stmts
 
 
@@ -108,10 +108,10 @@ if __name__ == '__main__':
             continue
         print('Looking up %s' % name)
         db_stmts = get_db_stmts_by_grounding(db_ns, db_id)
-        tas_stmts = get_tas_stmts(db_ns, db_id)
+        tas_stmts = get_tas_stmts(db_ns, db_id) if db_ns == 'HGNC' else []
         stmts = db_stmts + tas_stmts
         smts = ac.filter_by_curation(stmts, db_curations)
-        stmts = reground_stmts(tas_stmts + db_stmts, grounding_map,
+        stmts = reground_stmts(stmts, grounding_map,
                                misgrounding_map)
         all_stmts += stmts
     all_stmts = make_unique_hashes(all_stmts)
