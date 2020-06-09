@@ -1,3 +1,4 @@
+import json
 import requests
 
 default_map_name = 'covid19map'
