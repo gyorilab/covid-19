@@ -32,6 +32,24 @@ Statement objects directly) at
 
 - https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_filtered.pkl
 
+## Update June 9, 2020
+We have updated the content of the INDRA Statement dumps with a more
+recent build of the INDRA Database containing contents from:
+- More recent publications and preprints relevant to Covid-19 specifically
+- More full-text publications in the CORD-19 corpus
+- Extended drug-target interactions
+
+The previous output created on May 25, 2020 is available, with the same file
+names under the https://indra-covid19.s3.amazonaws.com/disease_maps/20200525
+prefix.
+
+The next update will build on the improvements we proposed for disease map
+entity identifiers
+(https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps/grounding
+which attempts to extend these identifiers.) which will allow more
+comprehensive alignment between disease maps entities and INDRA Statements.
+
+
 ### How else can I access the same INDRA content?
 If you are looking for a more targeted way to find INDRA content, you can
 - Submit specific queries on the INDRA Database website: https://db.indra.bio/statements
@@ -46,17 +64,6 @@ of papers from the CORD-19 corpus (https://www.kaggle.com/allen-institute-for-ai
 of documents and isn't derived from entities
 appearing in the Disease Maps. Therefore this dump which is based on entities
 in the Disease Maps is more relevant for this particular use case.
-
-## Plan for next update
-By May 31st we are planning to update the content of these models with a more
-recent build of the INDRA Database which will contain content from:
-- More recent publications and preprints relevant to Covid-19 specifically
-- More full-text publications in the CORD-19 corpus
-- Extended drug-target interactions
-- Queries for entities that are not yet fully identified in the Disease Maps
-(see analysis at
-https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps/grounding
-which attempts to extend these identifiers.)
 
 ## Method
 The `id_mapping_minerva.py` script is used to get all the elements of
@@ -74,6 +81,12 @@ Each entity is then the basis of a query into the INDRA Database to find all
 INDRA Statements in which the entity appears to create the `full` corpus.
 The `filtered` corpus is obtained by filtering for Statements in which
 every Agent is also a disease maps entity.
+
+To avoid pulling in a very large
+number of statements about some often-discussed entities appearing in the
+disease maps (e.g., TP53), we limited the number of unique INDRA statements
+added to the full corpus to 5,000. We also limited the number of individual
+evidences included for each INDRA statement to 100.
 
 ## Using INDRA Statements
 
