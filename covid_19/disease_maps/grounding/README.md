@@ -7,7 +7,7 @@ named entities in the Covid-19 disease maps.
 Updates/changes
 ---------------
 The latest version of the output is in the `groundings.csv` file (last updated
-June 9, 2020. Older versions are available with a date suffix e.g.,
+June 9, 2020). Older versions are available with a date suffix e.g.,
 `groundings_20200522.csv`.
 
 Method
