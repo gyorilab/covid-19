@@ -8,7 +8,7 @@ import pandas as pd
 from indra.util import zip_string
 
 
-basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-04-24')
+basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-06-10')
 
 
 metadata_file = join(basepath, 'metadata.csv')
@@ -74,12 +74,13 @@ def get_metadata_df():
             'publish_time': 'object',
             'authors': 'object',
             'journal': 'object',
-            'Microsoft Academic Paper ID': 'object',
-            'WHO #Covidence': 'object',
-            'has_pdf_parse': 'bool',
-            'has_pmc_xml_parse': 'bool',
-            'full_text_file': 'object',
+            'mag_id': 'object',
+            'who_covidence_id': 'object',
+            'arxiv_id': 'object',
+            'pdf_json_files': 'object',
+            'pmc_json_files': 'object',
             'url': 'object',
+            's2_id': 'object',
     }
     md = pd.read_csv(metadata_file, dtype=dtype_dict,
                            parse_dates=['publish_time'])
@@ -188,8 +189,8 @@ def get_text_refs_from_metadata(entry, metadata_version='1'):
         'doi': 'DOI',
         'pmcid': 'PMCID',
         'pubmed_id': 'PMID',
-        'WHO #Covidence': 'WHO_COVIDENCE',
-        'Microsoft Academic Paper ID': 'MICROSOFT'
+        'who_covidence_id': 'WHO_COVIDENCE',
+        'mag_id': 'MICROSOFT'
     }
     text_refs = {}
     for key, ref_key in mappings.items():
