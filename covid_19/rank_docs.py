@@ -3,7 +3,7 @@ import argparse
 from tabulate import tabulate
 from indra.literature import crossref_client, pubmed_client
 from indra.preassembler import Preassembler
-from indra.preassembler.hierarchy_manager import hierarchies
+from indra.ontology.bio import bio_ontology
 from indra.tools import assemble_corpus as ac
 from indra.databases.mesh_client import mesh_id_to_tree_numbers, get_mesh_name
 from indra_db import get_primary_db
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     # Combine duplicates in each statement list
     by_tr_pa = {}
     for tr, stmt_list in by_tr.items():
-        pa = Preassembler(hierarchies, stmt_list)
+        pa = Preassembler(bio_ontology, stmt_list)
         uniq_stmts = pa.combine_duplicates()
         by_tr_pa[tr] = uniq_stmts
 

@@ -6,8 +6,7 @@ import pandas
 import requests
 from collections import defaultdict
 from indra.statements import stmts_from_json
-from indra.preassembler.grounding_mapper.standardize import \
-    standardize_db_refs
+from indra.ontology.standardize import standardize_db_refs
 from indra.databases import get_identifiers_url, hgnc_client
 from emmaa.util import find_latest_s3_file, get_s3_client
 
