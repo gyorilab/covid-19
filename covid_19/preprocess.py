@@ -19,31 +19,27 @@ doc_df = None
 
 def get_zip_texts_for_entry(md_entry, zip=True):
     texts = []
-    if md_entry['full_text_file']:
-        content_dir = join(basepath, md_entry['full_text_file'],
-                           md_entry['full_text_file'])
-        if md_entry['has_pdf_parse']:
-            filenames = [s.strip() for s in md_entry['sha'].split(';')]
-            pdf_texts = []
-            for filename in filenames:
-                filename = f"{filename}.json"
-                content_path = join(content_dir, 'pdf_json', filename)
-                pdf_texts.append(get_text_from_json(content_path))
-            combined_text = '\n'.join(pdf_texts)
-            if zip:
-                combined_text = zip_string(combined_text)
-            texts.append(('cord19_pdf', 'fulltext', combined_text))
-        if md_entry['has_pmc_xml_parse']:
-            filename =  f"{md_entry['pmcid'].upper()}.xml.json"
-            content_path = join(content_dir, 'pmc_json', filename)
-            text = get_text_from_json(content_path)
-            if zip:
-                text = zip_string(text)
-            texts.append(('cord19_pmc_xml', 'fulltext', text))
+    if md_entry['pdf_json_files']:
+        filenames = [s.strip() for s in md_entry['pdf_json_files'].split(';')]
+        pdf_texts = []
+        for filename in filenames:
+            content_path = join(basepath, filename)
+            pdf_texts.append(get_text_from_json(content_path))
+        combined_text = '\n'.join(pdf_texts)
+        if zip:
+            combined_text = zip_string(combined_text)
+        texts.append(('cord19_pdf', 'fulltext', combined_text))
+    if md_entry['pmc_json_files']:
+        filename = md_entry['pmc_json_files']
+        content_path = join(basepath, filename)
+        text = get_text_from_json(content_path)
+        if zip:
+            text = zip_string(text)
+        texts.append(('cord19_pmc_xml', 'fulltext', text))
     if md_entry['abstract']:
         text = md_entry['abstract']
         if zip:
-            text = zip_string(txt)
+            text = zip_string(text)
         texts.append(('cord19_abstract', 'abstract', text))
     return texts
 
