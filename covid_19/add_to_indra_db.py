@@ -49,7 +49,6 @@ class Cord19Manager(ContentManager):
                              'pmcid': text_refs.get('PMCID'),
                              'doi': doi,
                              'cord_uid': text_refs.get('CORD19_UID')}
-            source_type = md_entry['full_text_file']
             # If has abstract, add TC entry with abstract content
             tc_texts = get_zip_texts_for_entry(md_entry)
             for source, text_type, text in tc_texts:
