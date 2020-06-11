@@ -6,20 +6,9 @@ import time
 from os.path import abspath, dirname, join, isdir
 import pandas as pd
 from indra.util import zip_string
-from indra_db.client.readonly import get_statement_jsons_from_papers
 
 
 basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-04-24')
-
-
-def get_path(subdir):
-    return join(basepath, subdir, subdir)
-
-
-paths = {'pmc_comm': get_path('comm_use_subset'),
-         'pmc_noncomm': get_path('noncomm_use_subset'),
-         'pmc_custom': get_path('custom_license'),
-         'preprint': get_path('biorxiv_medrxiv'),}
 
 
 metadata_file = join(basepath, 'metadata.csv')

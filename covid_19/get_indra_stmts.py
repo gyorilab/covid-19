@@ -219,6 +219,8 @@ def dump_raw_stmts(tr_dicts, stmt_file):
 
 def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-24'):
     """Get unified text_ref info given TextRef objects and CORD19 metadata."""
+    # Build up a sect of dictionaries for reverse lookup of TextRefs by
+    # different IDs (DOI, PMC, PMID, etc.)
     trs_by_doi = defaultdict(set)
     trs_by_pmc = defaultdict(set)
     trs_by_pmid = defaultdict(set)
@@ -233,9 +235,12 @@ def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-24'):
     multiple_tr_ids = []
     mismatch_tr_ids = []
     tr_dicts = {}
+    # Iterate over all the entries in the CORD19 metadata
     for md_row in md:
         tr_md = get_text_refs_from_metadata(md_row,
                                             metadata_version=metadata_version)
+        # Find all the different TextRef IDs associated with the metadata
+        # for this CORD19 araticle
         tr_ids_from_md = set()
         if 'DOI' in tr_md and trs_by_doi.get(tr_md['DOI'].upper()):
             tr_ids_from_md |= trs_by_doi[tr_md['DOI'].upper()]
@@ -243,13 +248,14 @@ def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-24'):
             tr_ids_from_md |= trs_by_pmc[tr_md['PMCID']]
         if 'PMID' in tr_md and trs_by_pmid.get(tr_md['PMID']):
             tr_ids_from_md |= trs_by_pmid[tr_md['PMID']]
+        # No TextRef for this CORD19 entry, so skip it
         if not tr_ids_from_md:
             continue
+        # Multiple TextRef IDs for this CORD19 article
         if len(tr_ids_from_md) > 1:
             print("More than one TextRef:", tr_md, tr_ids_from_md)
             multiple_tr_ids.append(tr_ids_from_md)
-        # No TextRef for this CORD19 entry, so skip it
-        # Now, find all statements with this TRID and update text ref dict
+        # Now,  TRID and update text ref dict
         for tr in tr_ids_from_md:
             tr_dict = {'TRID': tr.id}
             if tr.pmcid:

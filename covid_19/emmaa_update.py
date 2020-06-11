@@ -74,7 +74,7 @@ if __name__ == '__main__':
     old_mm_by_tr, old_mm_no_tr = stmts_by_text_refs(old_mm_stmts)
     new_cord_by_tr, new_cord_no_tr = stmts_by_text_refs(new_cord_grounded)
 
-    # Add any ModelManager statements from non-Cord19 publications
+    # Add any EMMAA statements from non-Cord19 publications
     updated_mm_stmts_by_tr = combine_stmts(new_cord_by_tr, old_mm_by_tr)
     updated_mm_stmts = [s for stmt_list in updated_mm_stmts_by_tr.values()
                           for s in stmt_list]
