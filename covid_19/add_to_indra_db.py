@@ -113,7 +113,12 @@ class Cord19Manager(ContentManager):
                                        ('doi', trs_by_doi)):
                 tr_set = trs_by_id.get(tc_entry[id_type])
                 if tr_set is not None:
-                    assert len(tr_set) == 1
+                    # assert len(tr_set) == 1
+                    if len(tr_set) != 1:
+                        logger.warning(
+                            '%s %s is associated with multiple TextRefs: %s'
+                            % (id_type, tc_entry[id_type], tr_set))
+                        continue
                     tr = list(tr_set)[0]
                     tr_ids_for_tc.add(tr.id)
             # Because this function is called using tc_data that has already
