@@ -3,17 +3,47 @@ import csv
 import sys
 import json
 import time
+import re
+import urllib
+import shutil
+import logging
 from os.path import abspath, dirname, join, isdir
 import pandas as pd
 from indra.util import zip_string
 
 
-basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-06-10')
+logger = logging.getLogger(__name__)
 
 
+def download_latest_data():
+    baseurl = 'https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/'
+    req = urllib.request.Request((baseurl + 'historical_releases.html')) 
+    with urllib.request.urlopen(req) as response: 
+        page_content = response.read()
+    latest_date = re.search(
+        r'<i>Latest release: (.*?)</i>', str(page_content)).group(1)
+    logger.info('Latest data release is %s'  % latest_date)
+    basepath = join(dirname(abspath(__file__)), '..', 'data', latest_date)
+    if not os.path.exists(basepath):
+        os.mkdir(basepath)
+    md_path = os.path.join(basepath, 'metadata.csv')
+    doc_path = os.path.join(basepath, 'document_parses.tar.gz')
+    if not os.path.exists(md_path):
+        logger.info('Downloading metadata')
+        md_url = baseurl + '%s/metadata.csv'  % latest_date
+        urllib.request.urlretrieve(md_url, md_path)
+    if not os.path.exists(doc_path):
+        logger.info('Downloading document parses')
+        doc_url = baseurl + '%s/document_parses.tar.gz'  % latest_date
+        urllib.request.urlretrieve(doc_url, doc_path)
+        logger.info('Unpacking document parses')
+        shutil.unpack_archive(doc_path, basepath)
+    logger.info('Latest data is available in %s'  % basepath)
+    return basepath
+
+
+basepath = download_latest_data()
 metadata_file = join(basepath, 'metadata.csv')
-
-
 doc_df = None
 
 
