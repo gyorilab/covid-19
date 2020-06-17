@@ -15,36 +15,56 @@ from indra.util import zip_string
 logger = logging.getLogger(__name__)
 
 
-def download_latest_data():
-    baseurl = 'https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/'
+baseurl = 'https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/'
+
+
+def get_latest_available_date():
+    """Get the date of the latest CORD19 dataset upload."""
     req = urllib.request.Request((baseurl + 'historical_releases.html')) 
     with urllib.request.urlopen(req) as response: 
         page_content = response.read()
     latest_date = re.search(
         r'<i>Latest release: (.*?)</i>', str(page_content)).group(1)
     logger.info('Latest data release is %s'  % latest_date)
-    basepath = join(dirname(abspath(__file__)), '..', 'data', latest_date)
-    if not os.path.exists(basepath):
-        os.mkdir(basepath)
-    md_path = os.path.join(basepath, 'metadata.csv')
-    doc_path = os.path.join(basepath, 'document_parses.tar.gz')
-    if not os.path.exists(md_path):
-        logger.info('Downloading metadata')
-        md_url = baseurl + '%s/metadata.csv'  % latest_date
-        urllib.request.urlretrieve(md_url, md_path)
-    if not os.path.exists(doc_path):
-        logger.info('Downloading document parses')
-        doc_url = baseurl + '%s/document_parses.tar.gz'  % latest_date
-        urllib.request.urlretrieve(doc_url, doc_path)
-        logger.info('Unpacking document parses')
-        shutil.unpack_archive(doc_path, basepath)
-    logger.info('Latest data is available in %s'  % basepath)
-    return basepath
+    return latest_date
 
 
-basepath = download_latest_data()
+latest_date = get_latest_available_date()  # For processing latest data
+# latest_date = '2020-06-15'  # For processing a different date manually
+data_dir = join(dirname(abspath(__file__)), '..', 'data')
+basepath = join(data_dir, latest_date)
 metadata_file = join(basepath, 'metadata.csv')
 doc_df = None
+
+
+def download_metadata():
+    """Download metadata file only."""
+    # Create missing directories
+    if not os.path.exists(data_dir):
+        os.mkdir(data_dir)
+    if not os.path.exists(basepath):
+        os.mkdir(basepath)
+    if not os.path.exists(metadata_file):
+        logger.info('Downloading metadata')
+        md_url = baseurl + '%s/metadata.csv'  % latest_date
+        urllib.request.urlretrieve(md_url, metadata_file)
+    logger.info('Latest metadata is available in %s'  % metadata_file)
+
+
+def download_latest_data():
+    """Download metadata and document parses."""
+    download_metadata()
+    doc_gz_path = os.path.join(basepath, 'document_parses.tar.gz')
+    doc_path = os.path.join(basepath, 'document_parses', 'pdf_json')
+    if not os.path.exists(doc_gz_path):
+        logger.info('Downloading document parses')
+        doc_url = baseurl + '%s/document_parses.tar.gz'  % latest_date
+        urllib.request.urlretrieve(doc_url, doc_gz_path)
+    # Separately check for unpacked directory in case the load was interrupted
+    if not os.path.exists(doc_path):
+        logger.info('Unpacking document parses')
+        shutil.unpack_archive(doc_gz_path, basepath)
+    logger.info('Latest data is available in %s'  % basepath)
 
 
 def get_zip_texts_for_entry(md_entry, zip=True):
