@@ -15,7 +15,7 @@ from indra.statements import stmts_from_json, stmts_to_json
 from indra.tools import assemble_corpus as ac
 from indra.literature import pubmed_client
 from covid_19.preprocess import get_ids, fix_doi, get_metadata_dict, \
-                                get_text_refs_from_metadata
+                                get_text_refs_from_metadata, download_metadata
 
 
 def get_unique_text_refs():
@@ -305,6 +305,8 @@ if __name__ == '__main__':
     gordon_stmts_file = join(stmts_dir, 'gordon_ndex_stmts.pkl')
     eidos_stmts_file = join(stmts_dir, 'eidos_bio_statements_v2.pkl')
     combined_stmts_file = join(stmts_dir, 'cord19_combined_stmts.pkl')
+    # Download metadata file if it is not in data directory
+    download_metadata()
     # Get the text ref objects from the DB corresponding to the CORD19
     # articles
     text_refs = get_unique_text_refs()
