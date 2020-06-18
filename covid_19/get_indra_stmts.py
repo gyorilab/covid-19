@@ -217,7 +217,7 @@ def dump_raw_stmts(tr_dicts, stmt_file):
     return stmts_flat
 
 
-def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-24'):
+def cord19_metadata_for_trs(text_refs, md):
     """Get unified text_ref info given TextRef objects and CORD19 metadata."""
     # Build up a sect of dictionaries for reverse lookup of TextRefs by
     # different IDs (DOI, PMC, PMID, etc.)
@@ -237,8 +237,7 @@ def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-24'):
     tr_dicts = {}
     # Iterate over all the entries in the CORD19 metadata
     for md_row in md:
-        tr_md = get_text_refs_from_metadata(md_row,
-                                            metadata_version=metadata_version)
+        tr_md = get_text_refs_from_metadata(md_row)
         # Find all the different TextRef IDs associated with the metadata
         # for this CORD19 araticle
         tr_ids_from_md = set()

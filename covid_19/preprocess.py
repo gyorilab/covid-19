@@ -227,9 +227,8 @@ def fix_doi(doi):
     return doi
 
 
-def get_text_refs_from_metadata(entry, metadata_version='1'):
+def get_text_refs_from_metadata(entry):
     mappings = {
-        'ID': 'CORD19_INDRA_V%s' % metadata_version,
         'cord_uid': 'CORD19_UID',
         'sha': 'CORD19_SHA',
         'doi': 'DOI',
