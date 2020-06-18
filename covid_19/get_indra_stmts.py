@@ -15,7 +15,7 @@ from indra.statements import stmts_from_json, stmts_to_json
 from indra.tools import assemble_corpus as ac
 from indra.literature import pubmed_client
 from covid_19.preprocess import get_ids, fix_doi, get_metadata_dict, \
-                                get_text_refs_from_metadata
+                                get_text_refs_from_metadata, download_metadata
 
 
 def get_unique_text_refs():
@@ -217,7 +217,7 @@ def dump_raw_stmts(tr_dicts, stmt_file):
     return stmts_flat
 
 
-def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-24'):
+def cord19_metadata_for_trs(text_refs, md):
     """Get unified text_ref info given TextRef objects and CORD19 metadata."""
     # Build up a sect of dictionaries for reverse lookup of TextRefs by
     # different IDs (DOI, PMC, PMID, etc.)
@@ -237,8 +237,7 @@ def cord19_metadata_for_trs(text_refs, md, metadata_version='2020-04-24'):
     tr_dicts = {}
     # Iterate over all the entries in the CORD19 metadata
     for md_row in md:
-        tr_md = get_text_refs_from_metadata(md_row,
-                                            metadata_version=metadata_version)
+        tr_md = get_text_refs_from_metadata(md_row)
         # Find all the different TextRef IDs associated with the metadata
         # for this CORD19 araticle
         tr_ids_from_md = set()
@@ -291,6 +290,17 @@ def combine_all_stmts(pkl_list, output_file):
     return all_stmts
 
 
+def get_tr_dicts_and_ids():
+    # Download metadata file if it is not in data directory
+    download_metadata()
+    # Get the text ref objects from the DB corresponding to the CORD19
+    # articles
+    text_refs = get_unique_text_refs()
+    md = get_metadata_dict()
+    tr_dicts, multiple_tr_ids = cord19_metadata_for_trs(text_refs, md)
+    return tr_dicts, multiple_tr_ids
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
             description='Get INDRA DB content for CORD19 articles.')
@@ -307,9 +317,7 @@ if __name__ == '__main__':
     combined_stmts_file = join(stmts_dir, 'cord19_combined_stmts.pkl')
     # Get the text ref objects from the DB corresponding to the CORD19
     # articles
-    text_refs = get_unique_text_refs()
-    md = get_metadata_dict()
-    tr_dicts, multiple_tr_ids = cord19_metadata_for_trs(text_refs, md)
+    tr_dicts, multiple_tr_ids = get_tr_dicts_and_ids()
 
     if args.mode == 'stmts':
         db_stmts = dump_raw_stmts(tr_dicts, db_stmts_file)

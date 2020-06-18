@@ -3,47 +3,93 @@ import csv
 import sys
 import json
 import time
+import re
+import urllib
+import shutil
+import logging
 from os.path import abspath, dirname, join, isdir
 import pandas as pd
 from indra.util import zip_string
 
 
-basepath = join(dirname(abspath(__file__)), '..', 'data', '2020-04-24')
+logger = logging.getLogger(__name__)
 
 
+baseurl = 'https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/'
+
+
+def get_latest_available_date():
+    """Get the date of the latest CORD19 dataset upload."""
+    req = urllib.request.Request((baseurl + 'historical_releases.html')) 
+    with urllib.request.urlopen(req) as response: 
+        page_content = response.read()
+    latest_date = re.search(
+        r'<i>Latest release: (.*?)</i>', str(page_content)).group(1)
+    logger.info('Latest data release is %s'  % latest_date)
+    return latest_date
+
+
+latest_date = get_latest_available_date()  # For processing latest data
+# latest_date = '2020-06-15'  # For processing a different date manually
+data_dir = join(dirname(abspath(__file__)), '..', 'data')
+basepath = join(data_dir, latest_date)
 metadata_file = join(basepath, 'metadata.csv')
-
-
 doc_df = None
+
+
+def download_metadata():
+    """Download metadata file only."""
+    # Create missing directories
+    if not os.path.exists(data_dir):
+        os.mkdir(data_dir)
+    if not os.path.exists(basepath):
+        os.mkdir(basepath)
+    if not os.path.exists(metadata_file):
+        logger.info('Downloading metadata')
+        md_url = baseurl + '%s/metadata.csv'  % latest_date
+        urllib.request.urlretrieve(md_url, metadata_file)
+    logger.info('Latest metadata is available in %s'  % metadata_file)
+
+
+def download_latest_data():
+    """Download metadata and document parses."""
+    download_metadata()
+    doc_gz_path = os.path.join(basepath, 'document_parses.tar.gz')
+    doc_path = os.path.join(basepath, 'document_parses', 'pdf_json')
+    if not os.path.exists(doc_gz_path):
+        logger.info('Downloading document parses')
+        doc_url = baseurl + '%s/document_parses.tar.gz'  % latest_date
+        urllib.request.urlretrieve(doc_url, doc_gz_path)
+    # Separately check for unpacked directory in case the load was interrupted
+    if not os.path.exists(doc_path):
+        logger.info('Unpacking document parses')
+        shutil.unpack_archive(doc_gz_path, basepath)
+    logger.info('Latest data is available in %s'  % basepath)
 
 
 def get_zip_texts_for_entry(md_entry, zip=True):
     texts = []
-    if md_entry['full_text_file']:
-        content_dir = join(basepath, md_entry['full_text_file'],
-                           md_entry['full_text_file'])
-        if md_entry['has_pdf_parse']:
-            filenames = [s.strip() for s in md_entry['sha'].split(';')]
-            pdf_texts = []
-            for filename in filenames:
-                filename = f"{filename}.json"
-                content_path = join(content_dir, 'pdf_json', filename)
-                pdf_texts.append(get_text_from_json(content_path))
-            combined_text = '\n'.join(pdf_texts)
-            if zip:
-                combined_text = zip_string(combined_text)
-            texts.append(('cord19_pdf', 'fulltext', combined_text))
-        if md_entry['has_pmc_xml_parse']:
-            filename =  f"{md_entry['pmcid'].upper()}.xml.json"
-            content_path = join(content_dir, 'pmc_json', filename)
-            text = get_text_from_json(content_path)
-            if zip:
-                text = zip_string(text)
-            texts.append(('cord19_pmc_xml', 'fulltext', text))
+    if md_entry['pdf_json_files']:
+        filenames = [s.strip() for s in md_entry['pdf_json_files'].split(';')]
+        pdf_texts = []
+        for filename in filenames:
+            content_path = join(basepath, filename)
+            pdf_texts.append(get_text_from_json(content_path))
+        combined_text = '\n'.join(pdf_texts)
+        if zip:
+            combined_text = zip_string(combined_text)
+        texts.append(('cord19_pdf', 'fulltext', combined_text))
+    if md_entry['pmc_json_files']:
+        filename = md_entry['pmc_json_files']
+        content_path = join(basepath, filename)
+        text = get_text_from_json(content_path)
+        if zip:
+            text = zip_string(text)
+        texts.append(('cord19_pmc_xml', 'fulltext', text))
     if md_entry['abstract']:
         text = md_entry['abstract']
         if zip:
-            text = zip_string(txt)
+            text = zip_string(text)
         texts.append(('cord19_abstract', 'abstract', text))
     return texts
 
@@ -74,12 +120,13 @@ def get_metadata_df():
             'publish_time': 'object',
             'authors': 'object',
             'journal': 'object',
-            'Microsoft Academic Paper ID': 'object',
-            'WHO #Covidence': 'object',
-            'has_pdf_parse': 'bool',
-            'has_pmc_xml_parse': 'bool',
-            'full_text_file': 'object',
+            'mag_id': 'object',
+            'who_covidence_id': 'object',
+            'arxiv_id': 'object',
+            'pdf_json_files': 'object',
+            'pmc_json_files': 'object',
             'url': 'object',
+            's2_id': 'object',
     }
     md = pd.read_csv(metadata_file, dtype=dtype_dict,
                            parse_dates=['publish_time'])
@@ -180,16 +227,15 @@ def fix_doi(doi):
     return doi
 
 
-def get_text_refs_from_metadata(entry, metadata_version='1'):
+def get_text_refs_from_metadata(entry):
     mappings = {
-        'ID': 'CORD19_INDRA_V%s' % metadata_version,
         'cord_uid': 'CORD19_UID',
         'sha': 'CORD19_SHA',
         'doi': 'DOI',
         'pmcid': 'PMCID',
         'pubmed_id': 'PMID',
-        'WHO #Covidence': 'WHO_COVIDENCE',
-        'Microsoft Academic Paper ID': 'MICROSOFT'
+        'who_covidence_id': 'WHO_COVIDENCE',
+        'mag_id': 'MICROSOFT'
     }
     text_refs = {}
     for key, ref_key in mappings.items():

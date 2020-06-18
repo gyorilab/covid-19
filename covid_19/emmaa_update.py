@@ -3,6 +3,7 @@ import argparse
 from copy import copy
 from os.path import join, dirname, abspath
 from indra.tools import assemble_corpus as ac
+from covid_19.get_indra_stmts import get_tr_dicts_and_ids, get_raw_stmts
 
 
 def stmts_by_text_refs(stmt_list):
@@ -47,7 +48,7 @@ if __name__ == '__main__':
                         required=True)
     parser.add_argument('-nc', '--new_cord',
                         help='Name of new CORD-19 DB stmts pkl file',
-                        required=True)
+                        required=False)
     parser.add_argument('-d', '--drug_stmts',
                          help='Path to drug statements pkl file',
                          required=True)
@@ -63,7 +64,11 @@ if __name__ == '__main__':
     with open(args.old_mm, 'rb') as f:
         old_mm_emmaa_stmts = pickle.load(f)
         old_mm_stmts = [es.stmt for es in old_mm_emmaa_stmts]
-    new_cord_stmts = ac.load_statements(args.new_cord)
+    if args.new_cord:
+        new_cord_stmts = ac.load_statements(args.new_cord)
+    else:
+        tr_dicts, multiple_tr_ids = get_tr_dicts_and_ids()
+        new_cord_stmts = get_raw_stmts(tr_dicts)
     drug_stmts = ac.load_statements(args.drug_stmts)
     gordon_stmts = ac.load_statements(args.gordon_stmts)
 

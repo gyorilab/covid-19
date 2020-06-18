@@ -11,7 +11,7 @@ from indra_db.managers.content_manager import PmcManager, ContentManager
 from covid_19.get_indra_stmts import get_unique_text_refs, get_metadata_dict, \
                                      cord19_metadata_for_trs
 from covid_19.preprocess import get_text_refs_from_metadata, \
-                                get_zip_texts_for_entry
+                                get_zip_texts_for_entry, download_latest_data
 from indra_db.databases import sql_expressions as sql_exp
 
 
@@ -26,6 +26,7 @@ gatherer = DataGatherer('content', ['refs', 'content'])
 
 class Cord19Manager(ContentManager):
     tr_cols = ('pmid', 'pmcid', 'doi')
+    my_source = 'cord19'
 
     def __init__(self, cord_md):
         self.cord_md = cord_md
@@ -49,7 +50,6 @@ class Cord19Manager(ContentManager):
                              'pmcid': text_refs.get('PMCID'),
                              'doi': doi,
                              'cord_uid': text_refs.get('CORD19_UID')}
-            source_type = md_entry['full_text_file']
             # If has abstract, add TC entry with abstract content
             tc_texts = get_zip_texts_for_entry(md_entry)
             for source, text_type, text in tc_texts:
@@ -114,7 +114,12 @@ class Cord19Manager(ContentManager):
                                        ('doi', trs_by_doi)):
                 tr_set = trs_by_id.get(tc_entry[id_type])
                 if tr_set is not None:
-                    assert len(tr_set) == 1
+                    # assert len(tr_set) == 1
+                    if len(tr_set) != 1:
+                        logger.warning(
+                            '%s %s is associated with multiple TextRefs: %s'
+                            % (id_type, tc_entry[id_type], tr_set))
+                        continue
                     tr = list(tr_set)[0]
                     tr_ids_for_tc.add(tr.id)
             # Because this function is called using tc_data that has already
@@ -239,6 +244,7 @@ class Cord19Manager(ContentManager):
 
 
 if __name__ == '__main__':
+    download_latest_data()
     md = get_metadata_dict()
     md = [e for e in md if e['doi'] and
                            e['doi'].upper() != '0.1126/SCIENCE.ABB7331']
