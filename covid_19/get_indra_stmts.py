@@ -290,6 +290,17 @@ def combine_all_stmts(pkl_list, output_file):
     return all_stmts
 
 
+def get_tr_dicts_and_ids():
+    # Download metadata file if it is not in data directory
+    download_metadata()
+    # Get the text ref objects from the DB corresponding to the CORD19
+    # articles
+    text_refs = get_unique_text_refs()
+    md = get_metadata_dict()
+    tr_dicts, multiple_tr_ids = cord19_metadata_for_trs(text_refs, md)
+    return tr_dicts, multiple_tr_ids
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
             description='Get INDRA DB content for CORD19 articles.')
@@ -304,13 +315,9 @@ if __name__ == '__main__':
     gordon_stmts_file = join(stmts_dir, 'gordon_ndex_stmts.pkl')
     eidos_stmts_file = join(stmts_dir, 'eidos_bio_statements_v2.pkl')
     combined_stmts_file = join(stmts_dir, 'cord19_combined_stmts.pkl')
-    # Download metadata file if it is not in data directory
-    download_metadata()
     # Get the text ref objects from the DB corresponding to the CORD19
     # articles
-    text_refs = get_unique_text_refs()
-    md = get_metadata_dict()
-    tr_dicts, multiple_tr_ids = cord19_metadata_for_trs(text_refs, md)
+    tr_dicts, multiple_tr_ids = get_tr_dicts_and_ids()
 
     if args.mode == 'stmts':
         db_stmts = dump_raw_stmts(tr_dicts, db_stmts_file)
