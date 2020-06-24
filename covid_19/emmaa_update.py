@@ -1,9 +1,13 @@
 import pickle
 import argparse
+import logging
 from copy import copy
 from os.path import join, dirname, abspath
 from indra.tools import assemble_corpus as ac
 from covid_19.get_indra_stmts import get_tr_dicts_and_ids, get_raw_stmts
+
+
+logger = logging.getLogger(__name__)
 
 
 def stmts_by_text_refs(stmt_list):
@@ -31,6 +35,44 @@ def combine_stmts(new_cord_by_tr, old_mm_by_tr):
             stmts_copy[trid] = stmts
     return stmts_copy
 
+
+def make_model_stmts(old_mm_stmts, drug_stmts, gordon_stmts,
+                     new_cord_stmts=None):
+    # If new cord statements are not provided, load from database
+    if not new_cord_stmts:
+        # Get text refs from metadata
+        tr_dicts, multiple_tr_ids = get_tr_dicts_and_ids()
+        # Filter to text refs that are not part of old model
+        new_tr_dicts = {}
+        old_tr_ids = set()
+        for stmt in old_mm_stmts: 
+            for evid in stmt.evidence: 
+                if evid.text_refs.get('TRID'): 
+                    old_tr_ids.add(evid.text_refs['TRID'])
+        for tr_id in tr_dicts: 
+            if tr_id not in old_tr_ids: 
+                new_tr_dicts[tr_id] = tr_dicts[tr_id]
+        logger.info('Found %d TextRefs, %d of which are not in old model'
+                    % (len(tr_dicts), len(new_tr_dicts)))
+        # Get statements for new text re
+        new_cord_stmts = get_raw_stmts(new_tr_dicts)
+
+    logger.info('Processing the statements')
+    # Filter out ungrounded statements
+    new_cord_grounded = ac.filter_grounded_only(new_cord_stmts)
+
+    # Group statements by TextRef
+    old_mm_by_tr, old_mm_no_tr = stmts_by_text_refs(old_mm_stmts)
+    new_cord_by_tr, new_cord_no_tr = stmts_by_text_refs(new_cord_grounded)
+
+    # Add any EMMAA statements from non-Cord19 publications
+    updated_mm_stmts_by_tr = combine_stmts(new_cord_by_tr, old_mm_by_tr)
+    updated_mm_stmts = [s for stmt_list in updated_mm_stmts_by_tr.values()
+                          for s in stmt_list]
+
+    # Now, add back in the drug stmts and Gordon PPI stmts
+    combined_stmts = updated_mm_stmts + drug_stmts + gordon_stmts
+    return combined_stmts
 
 if __name__ == '__main__':
     # Example:
@@ -61,33 +103,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Load everything
+    logger.info('Loading statements from pickle files')
     with open(args.old_mm, 'rb') as f:
         old_mm_emmaa_stmts = pickle.load(f)
         old_mm_stmts = [es.stmt for es in old_mm_emmaa_stmts]
     if args.new_cord:
         new_cord_stmts = ac.load_statements(args.new_cord)
     else:
-        tr_dicts, multiple_tr_ids = get_tr_dicts_and_ids()
-        new_cord_stmts = get_raw_stmts(tr_dicts)
+        new_cord_stmts = None
     drug_stmts = ac.load_statements(args.drug_stmts)
     gordon_stmts = ac.load_statements(args.gordon_stmts)
 
-    # Filter out ungrounded statements
-    new_cord_grounded = ac.filter_grounded_only(new_cord_stmts)
-
-    # Group statements by TextRef
-    old_mm_by_tr, old_mm_no_tr = stmts_by_text_refs(old_mm_stmts)
-    new_cord_by_tr, new_cord_no_tr = stmts_by_text_refs(new_cord_grounded)
-
-    # Add any EMMAA statements from non-Cord19 publications
-    updated_mm_stmts_by_tr = combine_stmts(new_cord_by_tr, old_mm_by_tr)
-    updated_mm_stmts = [s for stmt_list in updated_mm_stmts_by_tr.values()
-                          for s in stmt_list]
-
-    # Now, add back in the drug stmts and Gordon PPI stmts
-    combined_stmts = updated_mm_stmts + drug_stmts + gordon_stmts
+    combined_stmts = make_model_stmts(
+        old_mm_stmts, drug_stmts, gordon_stmts, new_cord_stmts)
 
     # Dump new pickle
     ac.dump_statements(combined_stmts, args.output_file)
-
-
