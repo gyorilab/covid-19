@@ -63,7 +63,19 @@ def download_latest_data():
     logger.info('Latest data is available in %s'  % basepath)
 
 
-def get_zip_texts_for_entry(md_entry, zip=True):
+def get_all_texts():
+    """Return a dictionary mapping json filenames with full text contents."""
+    texts_by_file = {}
+    logger.info('Extracting full texts from all document json files...')
+    tar = tarfile.open(doc_gz_path)
+    members = tar.getmembers()
+    for m in members:
+        f = tar.extractfile(m)
+        doc_json = json.loads(f.read().decode('utf-8'))
+        text = get_text_from_json(doc_json)
+        texts_by_file[m.name] = text
+    tar.close()
+    return texts_by_file
     texts = []
     if md_entry['pdf_json_files']:
         filenames = [s.strip() for s in md_entry['pdf_json_files'].split(';')]
