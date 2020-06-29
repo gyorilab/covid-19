@@ -36,8 +36,26 @@ def combine_stmts(new_cord_by_tr, old_mm_by_tr):
     return stmts_copy
 
 
-def make_model_stmts(old_mm_stmts, drug_stmts, gordon_stmts,
-                     new_cord_stmts=None):
+def make_model_stmts(old_mm_stmts, other_stmts, new_cord_stmts=None):
+    """Process and combine statements from different resources.
+
+    Parameters
+    ----------
+    old_mm_stmts : list[indra.statements.Statement]
+        A list of statements currently in the model.
+    other_stmts : list[indra.statements.Statement]
+        A list of statements that do not need additional processing
+        (e.g. drug, gordon, virhostnet statements).
+    new_cord_stmts : Optional[list[indra.statements.Statement]]
+        A list of newly extracted statements from CORD19 corpus. If not
+        provided, the statements are pulled from the database and filtered
+        to those not in old_mm_stmts.
+    
+    Returns
+    -------
+    combined_stmts : list[indra.statements.Statement]
+        A list of statements to make a new model from.
+    """
     # If new cord statements are not provided, load from database
     if not new_cord_stmts:
         # Get text refs from metadata
@@ -70,8 +88,9 @@ def make_model_stmts(old_mm_stmts, drug_stmts, gordon_stmts,
     updated_mm_stmts = [s for stmt_list in updated_mm_stmts_by_tr.values()
                           for s in stmt_list]
 
-    # Now, add back in the drug stmts and Gordon PPI stmts
-    combined_stmts = updated_mm_stmts + drug_stmts + gordon_stmts
+    # Now, add back in all other statements
+    combined_stmts = updated_mm_stmts + other_stmts
+    logger.info('Got %d total statements.' % len(combined_stmts))
     return combined_stmts
 
 if __name__ == '__main__':
@@ -81,6 +100,8 @@ if __name__ == '__main__':
     #            -nc stmts/cord19_all_db_raw_stmts.pkl \
     #            -d stmts/drug_stmts.pkl \
     #            -g stmts/gordon_ndex_stmts.pkl \
+    #            -v stmts/virhostnet_stmts.pkl \
+    #            -c stmts/ctd_stmts.pkl
     #            -f stmts/cord19_combined_stmts.pkl
     parser = argparse.ArgumentParser(
             description='Put together updated statement pkl for COVID-19 '
@@ -89,7 +110,7 @@ if __name__ == '__main__':
                         help='Name of old EMMAA model pkl file',
                         required=True)
     parser.add_argument('-nc', '--new_cord',
-                        help='Name of new CORD-19 DB stmts pkl file',
+                        help='Name of new CORD-19 DB stmts pkl file (optional)',
                         required=False)
     parser.add_argument('-d', '--drug_stmts',
                          help='Path to drug statements pkl file',
@@ -97,6 +118,12 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--gordon_stmts',
                          help='Path to Gordon statements pkl file',
                          required=True)
+    parser.add_argument('-v', '--virhostnet_stmts',
+                        help='Path to VirHostNet statements pkl file',
+                        required=True)
+    parser.add_argument('-c', '--ctd_stmts',
+                        help='Path to CTD statements pkl file',
+                        required=True)
     parser.add_argument('-f', '--output_file',
                          help='Output file for combined pkl',
                          required=True)
@@ -113,9 +140,13 @@ if __name__ == '__main__':
         new_cord_stmts = None
     drug_stmts = ac.load_statements(args.drug_stmts)
     gordon_stmts = ac.load_statements(args.gordon_stmts)
+    virhostnet_stmts = ac.load_statements(args.virhostnet_stmts)
+    ctd_stmts = ac.load_statements(args.ctd_stmts)
+
+    other_stmts = drug_stmts + gordon_stmts + virhostnet_stmts + ctd_stmts
 
     combined_stmts = make_model_stmts(
-        old_mm_stmts, drug_stmts, gordon_stmts, new_cord_stmts)
+        old_mm_stmts, other_stmts, new_cord_stmts)
 
     # Dump new pickle
     ac.dump_statements(combined_stmts, args.output_file)
