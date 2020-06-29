@@ -11,6 +11,11 @@ from emmaa.model_tests import load_tests_from_s3
 logger = logging.getLogger(__name__)
 
 
+diseases = {'C000657245', 'D045169', 'D019142', 'D000163',
+            'D018352', 'D007835', 'D000071243', 'D045464',
+            'D012295', 'D065632', 'D004769'}
+
+
 def get_groundings(stmts, ns, cutoff=None):
     if cutoff is None:
         cutoff = 1
@@ -88,10 +93,19 @@ if __name__ == '__main__':
     # chemical groundings for test statements
     model_gene_groundings = get_groundings(model_stmts, 'HGNC', cutoff=100)
     chem_test_groundings = get_groundings(all_test_stmts, 'CHEBI', None)
-    all_groundings = model_gene_groundings + chem_test_groundings
-    # Filter ctd statements to those having agents grounded to found groundings
-    filtered_stmts = filter_by_groundings(all_ctd_stmts, all_groundings)
+    gene_chem_groundings = model_gene_groundings + chem_test_groundings
+    gene_chem_groundings = set(gene_chem_groundings)
+    # Filter ctd statements to those having matching genes and chemicals
+    gene_chem_stmts = filter_by_groundings(
+        all_ctd_stmts, gene_chem_groundings, 'all')
+    # Filter ctd statements to those having matching diseases
+    mesh_groundings = set([('MESH', dis) for dis in diseases])
+    dis_stmts = filter_by_groundings(all_ctd_stmts, mesh_groundings, 'any')
+    total_stmts = gene_chem_stmts + dis_stmts
+    logger.info('Extracted %d statements with matching genes and chemicals and'
+                ' %d statements with matching diseases - %d in total.'
+                % (len(gene_chem_stmts), len(dis_stmts), len(total_stmts)))
     fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          '..', 'stmts', 'ctd_stmts.pkl')
     with open(fname, 'wb') as fh:
-        pickle.dump(filtered_stmts, fh)
+        pickle.dump(total_stmts, fh)
