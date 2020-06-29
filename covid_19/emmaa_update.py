@@ -101,6 +101,7 @@ if __name__ == '__main__':
     #            -d stmts/drug_stmts.pkl \
     #            -g stmts/gordon_ndex_stmts.pkl \
     #            -v stmts/virhostnet_stmts.pkl \
+    #            -c stmts/ctd_stmts.pkl
     #            -f stmts/cord19_combined_stmts.pkl
     parser = argparse.ArgumentParser(
             description='Put together updated statement pkl for COVID-19 '
@@ -120,6 +121,9 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--virhostnet_stmts',
                         help='Path to VirHostNet statements pkl file',
                         required=True)
+    parser.add_argument('-c', '--ctd_stmts',
+                        help='Path to CTD statements pkl file',
+                        required=True)
     parser.add_argument('-f', '--output_file',
                          help='Output file for combined pkl',
                          required=True)
@@ -137,8 +141,9 @@ if __name__ == '__main__':
     drug_stmts = ac.load_statements(args.drug_stmts)
     gordon_stmts = ac.load_statements(args.gordon_stmts)
     virhostnet_stmts = ac.load_statements(args.virhostnet_stmts)
+    ctd_stmts = ac.load_statements(args.ctd_stmts)
 
-    other_stmts = drug_stmts + gordon_stmts + virhostnet_stmts
+    other_stmts = drug_stmts + gordon_stmts + virhostnet_stmts + ctd_stmts
 
     combined_stmts = make_model_stmts(
         old_mm_stmts, other_stmts, new_cord_stmts)
