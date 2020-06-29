@@ -5,8 +5,8 @@ import json
 import time
 import re
 import urllib
-import shutil
 import logging
+import tarfile
 from os.path import abspath, dirname, join, isdir
 import pandas as pd
 from indra.util import zip_string
@@ -34,6 +34,7 @@ latest_date = get_latest_available_date()  # For processing latest data
 data_dir = join(dirname(abspath(__file__)), '..', 'data')
 basepath = join(data_dir, latest_date)
 metadata_file = join(basepath, 'metadata.csv')
+doc_gz_path = os.path.join(basepath, 'document_parses.tar.gz')
 doc_df = None
 
 
@@ -54,35 +55,49 @@ def download_metadata():
 def download_latest_data():
     """Download metadata and document parses."""
     download_metadata()
-    doc_gz_path = os.path.join(basepath, 'document_parses.tar.gz')
-    doc_path = os.path.join(basepath, 'document_parses', 'pdf_json')
+    
     if not os.path.exists(doc_gz_path):
         logger.info('Downloading document parses')
         doc_url = baseurl + '%s/document_parses.tar.gz'  % latest_date
         urllib.request.urlretrieve(doc_url, doc_gz_path)
-    # Separately check for unpacked directory in case the load was interrupted
-    if not os.path.exists(doc_path):
-        logger.info('Unpacking document parses')
-        shutil.unpack_archive(doc_gz_path, basepath)
     logger.info('Latest data is available in %s'  % basepath)
 
 
-def get_zip_texts_for_entry(md_entry, zip=True):
+def get_all_texts():
+    """Return a dictionary mapping json filenames with full text contents."""
+    texts_by_file = {}
+    logger.info('Extracting full texts from all document json files...')
+    tar = tarfile.open(doc_gz_path)
+    members = tar.getmembers()
+    for m in members:
+        f = tar.extractfile(m)
+        doc_json = json.loads(f.read().decode('utf-8'))
+        text = get_text_from_json(doc_json)
+        texts_by_file[m.name] = text
+    tar.close()
+    return texts_by_file
+
+
+def get_zip_texts_for_entry(md_entry, texts_by_file, zip=True):
     texts = []
     if md_entry['pdf_json_files']:
         filenames = [s.strip() for s in md_entry['pdf_json_files'].split(';')]
         pdf_texts = []
         for filename in filenames:
-            content_path = join(basepath, filename)
-            pdf_texts.append(get_text_from_json(content_path))
+            if texts_by_file.get(filename):
+                pdf_texts.append(texts_by_file[filename])
+            else:
+                logger.warning('Text for %s is missing'  % filename)
         combined_text = '\n'.join(pdf_texts)
         if zip:
             combined_text = zip_string(combined_text)
         texts.append(('cord19_pdf', 'fulltext', combined_text))
     if md_entry['pmc_json_files']:
         filename = md_entry['pmc_json_files']
-        content_path = join(basepath, filename)
-        text = get_text_from_json(content_path)
+        if texts_by_file.get(filename):
+            text = texts_by_file[filename]
+        else:
+            logger.warning('Text for %s is missing'  % filename)
         if zip:
             text = zip_string(text)
         texts.append(('cord19_pmc_xml', 'fulltext', text))
@@ -156,9 +171,7 @@ def get_ids(id_type):
     return unique_ids
 
 
-def get_text_from_json(json_filename):
-    with open(json_filename, 'rt') as f:
-        doc_json = json.load(f)
+def get_text_from_json(doc_json):
     text = ''
     text += doc_json['metadata']['title']
     text += '.\n'
@@ -176,6 +189,7 @@ def get_text_from_json(json_filename):
 
 
 def dump_text_files(output_dir, doc_df):
+    # TODO this needs to be updated with new df structure and code updates
     sha_ix = 1
     path_ix = 15
     title_ix = 3
@@ -243,6 +257,9 @@ def get_text_refs_from_metadata(entry):
         if val and not pd.isnull(val):
             if key == 'doi':
                 val = fix_doi(val)
+            elif key == 'pubmed_id':
+                if val is not None and not val.isdigit():
+                    val = None
             # Temporary patch to remove float suffixes
             if val.endswith('.0'):
                 val = val[:-2]

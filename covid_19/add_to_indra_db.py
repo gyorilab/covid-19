@@ -11,7 +11,7 @@ from indra_db.managers.content_manager import PmcManager, ContentManager
 from covid_19.get_indra_stmts import get_unique_text_refs, get_metadata_dict, \
                                      cord19_metadata_for_trs
 from covid_19.preprocess import get_text_refs_from_metadata, \
-                                get_zip_texts_for_entry, download_latest_data
+    get_zip_texts_for_entry, download_latest_data, get_all_texts
 from indra_db.databases import sql_expressions as sql_exp
 
 
@@ -36,6 +36,7 @@ class Cord19Manager(ContentManager):
                         'content',)
         self.review_fname = 'cord19_mgr_review.txt'
 
+        texts_by_file = get_all_texts()
         # Get tr_data list from Cord19 metadata
         # tr_data is a list [{'pmid': xxx, 'pmcid': xxx}, {...}]
         # tc_data is a list of dictionaries keyed by column name (???)
@@ -51,7 +52,7 @@ class Cord19Manager(ContentManager):
                              'doi': doi,
                              'cord_uid': text_refs.get('CORD19_UID')}
             # If has abstract, add TC entry with abstract content
-            tc_texts = get_zip_texts_for_entry(md_entry)
+            tc_texts = get_zip_texts_for_entry(md_entry, texts_by_file)
             for source, text_type, text in tc_texts:
                 tc_data_entry = {'source': source,
                                  'format': 'text',

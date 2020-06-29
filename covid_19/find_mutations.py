@@ -1,7 +1,7 @@
 import re
 import csv
 from covid_19.preprocess import get_metadata_dict, get_zip_texts_for_entry, \
-                                get_metadata_df
+                                get_metadata_df, get_all_texts
 from indra_db import get_primary_db
 
 
@@ -39,6 +39,7 @@ ignore_list = (
 )
 
 
+texts_by_file = get_all_texts()
 by_mut = {}
 by_doc = {}
 for ix, md_entry in enumerate(md):
@@ -46,7 +47,7 @@ for ix, md_entry in enumerate(md):
     title = md_entry['title']
     if pmid not in covid_pmids:
         continue
-    texts = get_zip_texts_for_entry(md_entry, zip=False)
+    texts = get_zip_texts_for_entry(md_entry, texts_by_file, zip=False)
     cord_uid = md_entry['cord_uid']
     for _, text_type, text in texts:
         matches = re.findall(mut_reg, text, flags=re.IGNORECASE)
