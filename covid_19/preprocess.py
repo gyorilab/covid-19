@@ -257,6 +257,9 @@ def get_text_refs_from_metadata(entry):
         if val and not pd.isnull(val):
             if key == 'doi':
                 val = fix_doi(val)
+            elif key == 'pubmed_id':
+                if val is not None and not val.isdigit():
+                    val = None
             # Temporary patch to remove float suffixes
             if val.endswith('.0'):
                 val = val[:-2]
