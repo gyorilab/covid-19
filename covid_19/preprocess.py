@@ -262,11 +262,11 @@ def get_text_refs_from_metadata(entry):
     text_refs = {}
     for key, ref_key in mappings.items():
         val = entry.get(key)
+        if key == 'doi':
+            val = fix_doi(val)
+        elif key == 'pubmed_id':
+            val = fix_pmid(val)
         if val and not pd.isnull(val):
-            if key == 'doi':
-                val = fix_doi(val)
-            elif key == 'pubmed_id':
-                val = fix_pmid(val)
             # Temporary patch to remove float suffixes
             if val.endswith('.0'):
                 val = val[:-2]
