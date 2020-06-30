@@ -14,7 +14,7 @@ from indra_db.util import distill_stmts
 from indra.statements import stmts_from_json, stmts_to_json
 from indra.tools import assemble_corpus as ac
 from indra.literature import pubmed_client
-from covid_19.preprocess import get_ids, fix_doi, get_metadata_dict, \
+from covid_19.preprocess import get_ids, fix_doi, fix_pmid, get_metadata_dict, \
                                 get_text_refs_from_metadata, download_metadata
 
 
@@ -30,7 +30,7 @@ def get_unique_text_refs():
         Unique TextRef IDs.
     """
     pmcids = get_ids('pmcid')
-    pmids = get_ids('pubmed_id')
+    pmids = [fix_pmid(pmid) for pmid in get_ids('pubmed_id')]
     dois = [fix_doi(doi) for doi in get_ids('doi')]
     # Get unique text_refs from the DB
     db = get_primary_db()

@@ -241,6 +241,14 @@ def fix_doi(doi):
     return doi
 
 
+def fix_pmid(pmid):
+    if pmid is None:
+        return None
+    if not pmid.isdigit():
+        pmid = None
+    return pmid
+
+
 def get_text_refs_from_metadata(entry):
     mappings = {
         'cord_uid': 'CORD19_UID',
@@ -258,8 +266,7 @@ def get_text_refs_from_metadata(entry):
             if key == 'doi':
                 val = fix_doi(val)
             elif key == 'pubmed_id':
-                if val is not None and not val.isdigit():
-                    val = None
+                val = fix_pmid(val)
             # Temporary patch to remove float suffixes
             if val.endswith('.0'):
                 val = val[:-2]
