@@ -73,7 +73,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Load model statements and tests
-    model_stmts = get_assembled_statements('covid19')
+    model_stmts, _ = get_assembled_statements('covid19')
     curated_tests, _ = load_tests_from_s3('covid19_curated_tests')
     if isinstance(curated_tests, dict):  # if descriptions were added
         curated_tests = curated_tests['tests']
