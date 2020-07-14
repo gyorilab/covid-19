@@ -73,7 +73,7 @@ def make_model_stmts(old_mm_stmts, other_stmts, new_cord_stmts=None):
         logger.info('Found %d TextRefs, %d of which are not in old model'
                     % (len(tr_dicts), len(new_tr_dicts)))
         # Get statements for new text re
-        new_cord_stmts = get_raw_stmts(new_tr_dicts)
+        new_cord_stmts = get_raw_stmts(new_tr_dicts, date_limit=5)
 
     logger.info('Processing the statements')
     # Filter out ungrounded statements
