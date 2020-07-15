@@ -4,6 +4,7 @@ import time
 import json
 import zlib
 import argparse
+import datetime
 from copy import deepcopy
 from itertools import groupby
 from collections import defaultdict
@@ -146,7 +147,7 @@ def get_reach_readings(tr_dicts, dump_dir=None):
     return rds_filt
 
 
-def get_raw_stmts(tr_dicts):
+def get_raw_stmts(tr_dicts, date_limit=None):
     """Return all raw stmts in INDRA DB for a given set of TextRef IDs.
 
     Parameters
@@ -154,6 +155,9 @@ def get_raw_stmts(tr_dicts):
     tr_dicts : dict of text ref information
         Keys are text ref IDs (ints) mapped to dictionaries of text ref
         metadata.
+
+    date_limit : Optional[int]
+        A number of days to check the readings back.
 
     Returns
     -------
@@ -166,12 +170,17 @@ def get_raw_stmts(tr_dicts):
     text_ref_ids = list(tr_dicts.keys())
     print(f"Distilling statements for {len(text_ref_ids)} TextRefs")
     start = time.time()
-    db_stmts = distill_stmts(db, get_full_stmts=True,
-                             clauses=[
-                                 db.TextRef.id.in_(text_ref_ids),
-                                 db.TextContent.text_ref_id == db.TextRef.id,
-                                 db.Reading.text_content_id == db.TextContent.id,
-                                 db.RawStatements.reading_id == db.Reading.id])
+    clauses = [
+        db.TextRef.id.in_(text_ref_ids),
+        db.TextContent.text_ref_id == db.TextRef.id,
+        db.Reading.text_content_id == db.TextContent.id,
+        db.RawStatements.reading_id == db.Reading.id]
+    if date_limit:
+        start_date = (
+            datetime.datetime.utcnow() - datetime.timedelta(days=date_limit))
+        print(f'Limiting to stmts from readings in the last {date_limit} days')
+        clauses.append(db.Reading.create_date > start_date)
+    db_stmts = distill_stmts(db, get_full_stmts=True, clauses=clauses)
     # Group lists of statements by the IDs TextRef that they come from
     stmts_by_trid = {}
     for stmt in db_stmts:
