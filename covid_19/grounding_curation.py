@@ -1,17 +1,21 @@
+import tqdm
 import pickle
 import gilda
 import logging
 from collections import Counter
 from indra.util import write_unicode_csv
 from indra.statements import Complex
+from indra.tools import assemble_corpus as ac
 from indra.databases import get_identifiers_url
-from indra.ontology.standardize import name_from_grounding
+from indra.ontology.standardize import get_standard_name
 
 
 logging.getLogger('gilda').setLevel(logging.WARNING)
 
 
 def get_eidos_gilda_grounding_counts(stmts):
+    """Return normalized text counts (name in case of Eidos concepts)
+    and evidence texts corresponding to each agent text."""
     texts = []
     ev_text_for_agent_text = {}
     for stmt in stmts:
@@ -22,7 +26,7 @@ def get_eidos_gilda_grounding_counts(stmts):
                 gr = matches[0].term.db, matches[0].term.id
             else:
                 gr = None, None
-            standard_name = name_from_grounding(*gr) \
+            standard_name = get_standard_name(*gr) \
                 if gr[0] is not None else ''
             url = get_identifiers_url(*gr) if gr[0] is not None else ''
             ev_text_for_agent_text[txt] = (stmt.evidence[0].pmid,
@@ -35,46 +39,30 @@ def get_eidos_gilda_grounding_counts(stmts):
 
 
 def get_text_grounding_counts(stmts):
+    """Return countss of entity texts and evidence texts for those
+    entity texts."""
     texts = []
     ev_text_for_agent_text = {}
     # Iterate over each statement and its agents
-    for stmt in stmts:
+    #stmts = ac.map_grounding(stmts)
+    for stmt in tqdm.tqdm(stmts):
         for idx, agent in enumerate(stmt.agent_list()):
-            if agent is None:
+            if agent is None or 'TEXT' not in agent.db_refs:
                 continue
             # Get some properties of the assembled agent (grounding,
             # standard name, link-out URL)
             gr = agent.get_grounding()
-            standard_name = name_from_grounding(*gr) \
-                if gr[0] is not None else ''
             url = get_identifiers_url(*gr) if gr[0] is not None else ''
-            # For Complexes, we can't rely on the indexing in annotations to
-            # get the raw_text of the Agents so we just take the surface-level
-            # TEXT entry in the assembled Agent's db_refs
-            if isinstance(stmt, Complex):
-                agent_texts = [agent.db_refs['TEXT']] \
-                    if 'TEXT' in agent.db_refs else []
-            # In other cases, we iterate over all the evidences and use the
-            # agent index to find the raw text in annotations
-            else:
-                agent_texts = []
-                for ev in stmt.evidence:
-                    if 'agents' not in ev.annotations:
-                        continue
-                    raw_txt = ev.annotations['agents']['raw_text'][idx]
-                    if raw_txt:
-                        agent_texts.append(raw_txt)
-            for t in agent_texts:
-                # These entries are presumably overwritten many times but
-                # that's okay.
-                ev_text_for_agent_text[t] = (ev.pmid, ev.text)
-                gilda_grounding = gilda.ground(t)
-                gilda_grounding = '%s:%s' % (gilda_grounding[0].term.db,
-                                             gilda_grounding[0].term.id) \
-                    if gilda_grounding else ''
-                # We now add a new entry to the text-grounding list
-                texts.append((t, ('%s:%s' % gr) if gr[0] else '',
-                              standard_name, url, gilda_grounding))
+            agent_txt = agent.db_refs['TEXT']
+            ev_text_for_agent_text[agent_txt] = (stmt.evidence[0].pmid,
+                                                 stmt.evidence[0].text)
+            gilda_grounding = gilda.ground(agent_txt)
+            gilda_grounding = '%s:%s' % (gilda_grounding[0].term.db,
+                                         gilda_grounding[0].term.id) \
+                if gilda_grounding else ''
+            # We now add a new entry to the text-grounding list
+            texts.append((agent_txt, ('%s:%s' % gr) if gr[0] else '',
+                          agent.name, url, gilda_grounding))
     # Count the unique text-grounding entries
     cnt = Counter(texts)
     return cnt, ev_text_for_agent_text
@@ -87,12 +75,15 @@ def get_raw_statement_text_grounding_counts(stmts):
         for agent in stmt.agent_list():
             if agent is None:
                 continue
-            txt = agent.db_refs['TEXT']
+            if stmt.evidence[0].source_api == 'eidos':
+                txt = agent.db_refs['TEXT_NORM']
+            else:
+                txt = agent.db_refs['TEXT']
             ev_text_for_agent_text[txt] = (stmt.evidence[0].pmid,
                                            stmt.evidence[0].text)
             assert txt, agent.db_refs
             gr = agent.get_grounding()
-            standard_name = name_from_grounding(*gr) if gr[0] else ''
+            standard_name = get_standard_name(*gr) if gr[0] else ''
             url = get_identifiers_url(*gr) if gr[0] is not None else ''
             gilda_grounding = gilda.ground(txt, context=stmt.evidence[0].text)
             gilda_grounding = '%s:%s' % (gilda_grounding[0].term.db,
