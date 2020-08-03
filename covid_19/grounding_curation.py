@@ -44,7 +44,7 @@ def get_text_grounding_counts(stmts):
     texts = []
     ev_text_for_agent_text = {}
     # Iterate over each statement and its agents
-    #stmts = ac.map_grounding(stmts)
+    stmts = ac.map_grounding(stmts)
     for stmt in tqdm.tqdm(stmts):
         for idx, agent in enumerate(stmt.agent_list()):
             if agent is None or 'TEXT' not in agent.db_refs:
