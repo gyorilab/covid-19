@@ -101,17 +101,6 @@ def get_statements(target):
     stmts = ac.filter_by_curation(stmts, db_curations)
     stmts = filter_neg(stmts)
     return stmts
-    """
-    # Evidence and source counts not needed anymore
-    ev_counts = {s.get_hash(): len(s.evidence) for s in stmts}
-    source_counts = {}
-    for stmt in stmts:
-        stmt_source_counts = get_source_counts_dict()
-        for ev in stmt.evidence:
-            stmt_source_counts[ev.source_api] += 1
-        source_counts[stmt.get_hash()] = stmt_source_counts
-    return stmts, ev_counts, source_counts
-    """
 
 
 def make_html(stmts, fname):
@@ -161,21 +150,11 @@ if __name__ == '__main__':
         all_ctd_stmts = pickle.load(f)
         all_ctd_stmts = filter_neg(all_ctd_stmts)
     for target in targets:
-        # Evidence and source counts not needed anymore
-        #stmts, ev_counts, source_counts = get_statements(target)
         stmts = get_statements(target)
         fname = '%s.html' % target
         ctd_stmts = ac.filter_gene_list(all_ctd_stmts, [target], policy='one')
         stmts += ctd_stmts
         all_stmts += stmts
-        """
-        # Evidence and source counts not needed anymore
-        for sh, cnt in ev_counts.items():
-            if sh in all_ev_counts:
-                all_ev_counts[sh] += ev_counts[sh]
-            else:
-                all_ev_counts[sh] = ev_counts[sh]
-        """
         make_html(stmts, fname)
         s3_client = boto3.client('s3')
         with open(fname, 'r') as fh:
