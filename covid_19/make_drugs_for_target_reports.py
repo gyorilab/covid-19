@@ -2,11 +2,13 @@
 molecules that target a given list of proteins."""
 
 import boto3
+import pickle
 from collections import defaultdict
 from collections import OrderedDict
 from indra.sources import tas
 from indra.sources import indra_db_rest
 from indra.assemblers.html import HtmlAssembler
+from indra.statements import Inhibition, DecreaseAmount
 import indra.tools.assemble_corpus as ac
 from indra.databases import get_identifiers_url
 from indra_db.client.principal.curation import get_curations
@@ -21,8 +23,8 @@ def get_source_counts_dict():
 
 
 def is_small_molecule(agent):
-    return set(agent.db_refs.keys()) & {'CHEBI', 'PUBCHEM', 'CHEBML',
-                                        'HMS-LINCS'}
+    return set(agent.db_refs.keys()) & {'CHEBI', 'PUBCHEM', 'CHEMBL',
+                                        'HMS-LINCS', 'DRUGBANK', 'CAS'}
 
 
 def filter_out_source_evidence(stmts, sources):
@@ -72,16 +74,35 @@ def get_db_stmts(target):
                 is_small_molecule(s.subj)]
     db_stmts = filter_out_source_evidence(db_stmts,
                                           {'tas', 'medscan'})
+
+    for stmt in db_stmts:
+        for agent in stmt.agent_list():
+            if agent is not None and 'CHEBI' in agent.db_refs:
+                chebi_id = agent.db_refs['CHEBI']
+                if not chebi_id.startswith('CHEBI'):
+                    agent.db_refs['CHEBI'] = 'CHEBI:%s' % chebi_id
+
     return db_stmts
 
 
+def filter_neg(stmts):
+    inhib_stmts = ac.filter_by_type(stmts, Inhibition)
+    decamt_stmts = ac.filter_by_type(stmts, DecreaseAmount)
+    return inhib_stmts + decamt_stmts
+
+
 def get_statements(target):
-    tas_stmts = get_tas_stmts(target)
+    #tas_stmts = get_tas_stmts(target)
     db_stmts = get_db_stmts(target)
-    stmts = filter_misgrounding(target, tas_stmts + db_stmts)
+    stmts = db_stmts
+    #stmts = tas_stmts + db_stmts
+    stmts = filter_misgrounding(target, stmts)
     stmts = ac.run_preassembly(stmts)
     stmts = ac.filter_by_curation(stmts, db_curations)
-
+    stmts = filter_neg(stmts)
+    return stmts
+    """
+    # Evidence and source counts not needed anymore
     ev_counts = {s.get_hash(): len(s.evidence) for s in stmts}
     source_counts = {}
     for stmt in stmts:
@@ -90,11 +111,11 @@ def get_statements(target):
             stmt_source_counts[ev.source_api] += 1
         source_counts[stmt.get_hash()] = stmt_source_counts
     return stmts, ev_counts, source_counts
+    """
 
 
-def make_html(stmts, ev_counts, source_counts, fname):
-    ha = HtmlAssembler(stmts, ev_totals=ev_counts,
-                       source_counts=source_counts,
+def make_html(stmts, fname):
+    ha = HtmlAssembler(stmts,
         title='Small molecule inhibitors of %s assembled by INDRA' % target,
                        db_rest_url='http://db.indra.bio/latest')
     ha.make_model()
@@ -105,8 +126,9 @@ def make_drug_list(stmts, ev_counts):
     agent_by_name = {}
     counts_by_name = defaultdict(int)
     for stmt in stmts:
-        agent_by_name[stmt.subj.name] = stmt.subj
-        counts_by_name[stmt.subj.name] += ev_counts.get(stmt.get_hash(), 0)
+        subj = stmt.agent_list()[0]
+        agent_by_name[subj.name] = subj
+        counts_by_name[subj.name] += ev_counts.get(stmt.get_hash(), 0)
     drug_list = []
     for name, agent in sorted(agent_by_name.items(),
                               key=lambda x: counts_by_name[x[0]],
@@ -130,19 +152,31 @@ if __name__ == '__main__':
     db = get_db('primary')
     db_curations = get_curations(db=db)
     tp = tas.process_from_web()
-    targets = ['TMPRSS2', 'ACE2', 'FURIN', 'CTSB', 'CTSL']
+    #targets = ['TMPRSS2', 'ACE2', 'FURIN', 'CTSB', 'CTSL']
+    targets = ['PIKFYVE', 'INPP5E', 'PIK3C2A', 'PIK3C2B', 'PIK3C2G',
+               'PI4K2A', 'PI4K2B', 'PI4KB', 'EHD3', 'PIK3C3']
     all_stmts = []
     all_ev_counts = {}
+    with open('ctd_drugbank_tas_pikfyve.pkl', 'rb') as f:
+        all_ctd_stmts = pickle.load(f)
+        all_ctd_stmts = filter_neg(all_ctd_stmts)
     for target in targets:
-        stmts, ev_counts, source_counts = get_statements(target)
+        # Evidence and source counts not needed anymore
+        #stmts, ev_counts, source_counts = get_statements(target)
+        stmts = get_statements(target)
         fname = '%s.html' % target
+        ctd_stmts = ac.filter_gene_list(all_ctd_stmts, [target], policy='one')
+        stmts += ctd_stmts
         all_stmts += stmts
+        """
+        # Evidence and source counts not needed anymore
         for sh, cnt in ev_counts.items():
             if sh in all_ev_counts:
                 all_ev_counts[sh] += ev_counts[sh]
             else:
                 all_ev_counts[sh] = ev_counts[sh]
-        make_html(stmts, ev_counts, source_counts, fname)
+        """
+        make_html(stmts, fname)
         s3_client = boto3.client('s3')
         with open(fname, 'r') as fh:
             html_str = fh.read()
