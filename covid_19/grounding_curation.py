@@ -118,8 +118,11 @@ if __name__ == '__main__':
     #cnt, ev_text_for_agent_text = get_text_grounding_counts(stmts)
     #dump_table(cnt, ev_text_for_agent_text, '../grounding_table.tsv')
 
-    stmts = load_stmts('../eidos_statements.pkl')
-    cnt, ev_text_for_agent_text = get_eidos_gilda_grounding_counts(stmts)
-    dump_table(cnt, ev_text_for_agent_text,
-               '../grounding_eidos_gilda_table.tsv')
+    #stmts = load_stmts('../eidos_statements.pkl')
+    #cnt, ev_text_for_agent_text = get_eidos_gilda_grounding_counts(stmts)
+    #dump_table(cnt, ev_text_for_agent_text,
+    #           '../grounding_eidos_gilda_table.tsv')
 
+    stmts = load_stmts('../reach_cord19_new.pkl')
+    cnt, ev_text_for_agent_text = get_text_grounding_counts(stmts)
+    dump_table(cnt, ev_text_for_agent_text, '../reach_new_grounding_table.tsv')
