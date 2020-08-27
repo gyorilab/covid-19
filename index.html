@@ -29,8 +29,8 @@
             <nav id="nav">
               <ul>
                 <li><a href="#top" id="top-link"><span class="icon solid fa-home">Intro</span></a></li>
-                <li><a href="#applications" id="products-link"><span class="icon solid fa-th">Applications</span></a></li>
-                <li><a href="#about" id="about-link"><span class="icon solid fa-user">About Me</span></a></li>
+                <li><a href="#applications" id="applications-link"><span class="icon solid fa-th">Applications</span></a></li>
+                <li><a href="#products" id="products-link"><span class="icon solid fa-user">Products</span></a></li>
                 <li><a href="#contact" id="contact-link"><span class="icon solid fa-envelope">Contact</span></a></li>
               </ul>
             </nav>
@@ -72,7 +72,7 @@
             </div>
           </section>
 
-        <!-- Products -->
+        <!-- Applications -->
           <section id="applications" class="two">
             <div class="container">
 
@@ -83,38 +83,59 @@
               <p>Blurb about applications</p>
 
               <div class="row">
+                <!-- col 1-->
                 <div class="col-4 col-12-mobile">
+
+                  <!-- INDRA -->
                   <article class="item">
-                    <a href="/covid-19/applications.html#indra" class="image fit"><img
+                    <a href="https://indra.readthedocs.io/en/latest/" class="image fit"><img
                       src="https://raw.githubusercontent.com/sorgerlab/indra/master/doc/indra_logo.png" alt="" /></a>
                     <header>
                       <h3>INDRA</h3>
                       INDRA (Integrated Network and Dynamical Reasoning Assembler) is an automated model assembly
                       system interfacing with NLP systems and databases to collect knowledge, and through a process
-                      of assembly, produce causal graphs and dynamical models. See the <a
-                      href="https://indra.readthedocs.io/en/latest/">documentation</a> and code at <a
-                      href="https://github.com/sorgerlab/indra">GitHub</a> for more details.
+                      of assembly, produce causal graphs and dynamical models.<br>
+                      Read the <a href="https://indra.readthedocs.io/en/latest/">documentation</a>.<br>
+                      See the code on <a href="https://github.com/sorgerlab/indra">GitHub</a>.<br>
+                      The INDRA <a href="http://api.indra.bio:8000">REST API</a>.
                     </header>
                   </article>
+
+                  <!-- INDRA DB -->
                   <article class="item">
-                    <a href="/covid-19/applications.html#indra-db" class="image fit"><img src="https://s3.amazonaws.com/bigmech/indra-db/indra_db_logo.png" alt="" /></a>
+                    <a href="https://db.indra.bio" class="image fit"><img src="https://s3.amazonaws.com/bigmech/indra-db/indra_db_logo.png" alt="" /></a>
                     <header>
                       <h3>INDRA DB</h3>
                       The INDRA Database is a framework for creating, maintaining, and accessing a database of
-                      content, readings, and statements. <a href="https://db.indra.bio">db.indra.bio</a>
+                      content, readings, and statements. You can search the INDRA Database for statements here:
+                      <a href="https://db.indra.bio/">db.indra.bio</a>.<br>
+                      Here is an example of searching for statements where ACE2 is object while returning a maximum
+                      of 100 results:
+                      <a href="https://db.indra.bio/statements/from_agents?object=ACE2&max_stmts=100&format=html">
+                        https://db.indra.bio/statements/from_agents?object=ACE2&max_stmts=100&format=html</a><br>
+                      The INDRA Database has a REST API, documented
+                      <a href="https://indra-db.readthedocs.io/en/latest/rest_api_doc/readme_link.html#">here</a>.<br>
+                      Read the documentation <a href="https://indra-db.readthedocs.io/en/latest/">here</a>.
                     </header>
                   </article>
                 </div>
+
+                <!-- col 2-->
                 <div class="col-4 col-12-mobile">
                   <article class="item">
-                    <a href="/covid-19/applications.html#network-search" class="image fit"><img src="https://indra-covid19.s3.amazonaws.com/images/ACE2_search_options.png" alt="" /></a>
+                    <!-- network search -->
+                    <a href="" class="image fit"><img src="https://indra-covid19.s3.amazonaws.com/images/ACE2_search_options.png" alt="" /></a>
                     <header>
                       <h3>The INDRA Network Search</h3>
                       The INDRA Network Search service allows you to do pathfinding in a graph representation of a
-                      snapshot of the INDRA database. The full documentation for the network search UI is available
-                      via readthedocs <a href="https://depmap-analysis.readthedocs.io/en/latest/indra_depmap_service/web_ui_introduction.html">here</a>.
+                      snapshot of the INDRA database. The service is available at <a
+                      href="https://network.indra.bio/">network.indra.bio</a>.<br>
+                      <i>Insert example of search here</i><br>
+                      The full documentation for the network search UI is available via readthedocs <a
+                      href="https://depmap-analysis.readthedocs.io/en/latest/indra_depmap_service/web_ui_introduction.html">here</a>.
                     </header>
                   </article>
+                  <!-- CLARE-->
                   <article class="item">
                     <a href="/covid-19/clare.html" class="image fit"><img
                       src="https://indra-covid19.s3.amazonaws.com/images/clare_ace2_obj.png" alt="Context-aware Language-based Reasoning Engine" /></a>
@@ -122,12 +143,18 @@
                       <h3>Clare</h3>
                       CLARE (Context-aware Language-based Reasoning Engine) is a dialogue system that can be used to
                       talk with a machine partner about molecular biology and can be adapted for us in other
-                      domains. See an introductory video about CLARE <a
+                      domains. The context awareness allows the user to fine tune results by asking follow up
+                      questions while natural language model building allows the user to build a model of e.g. a
+                      drug mechanism and ask qualitative questions about the behavior of the model.<br>
+                      See an introductory video about CLARE <a
                       href="http://sorger.med.harvard.edu/data/bgyori/clare_intro.mov">here</a>.
                     </header>
                   </article>
                 </div>
+
+                <!-- col 3-->
                 <div class="col-4 col-12-mobile">
+                  <!-- BOB -->
                   <article class="item">
                     <a href="#" class="image fit"><img
                       src="https://raw.githubusercontent.com/bgyori/cwc_integ_service/master/static/sbgn_small.png"
@@ -135,13 +162,17 @@
                     <header>
                       <h3>BOB</h3>
                       Bob with Bioagents is a machine partner you can chat about molecular biology and solve
-                      problems together with. BOB is found at <a href="http://dialogue.bio/">dialogue.bio</a>.
-                    </header>
-                  </article>
-                  <article class="item">
-                    <a href="#" class="image fit"><img src="images/pic07.jpg" alt="" /></a>
-                    <header>
-                      <h3>Orci Convallis</h3>
+                      problems together with.<br>
+                      With the help of BOB a user can formulate a hypothesis for e.g. "How does SB525334 decrease
+                      the amount of SMURF2?" (a hypothetical experimental observation). The hypothesis is then turned
+                      into a mathematical model of biochemical mechanisms that is able to verify that the
+                      model reproduces observations of interest. A video showing this example is found <a
+                      href="https://goo.gl/frRzst">here</a>.<br>
+                      Another usage example for BOB is analyzing a list of genes and experimental data uploaded by
+                      the user by e.g. performing gene set enrichment analysis on the genes. A video for this
+                      example is available <a href="https://tufts.box.com/s/1g4gziwqzmjndzx0h0zig9ecq7qa59w5"></a>
+                      here.<br>
+                      BOB is available at <a href="http://dialogue.bio/">dialogue.bio</a>.
                     </header>
                   </article>
                 </div>
@@ -150,8 +181,8 @@
             </div>
           </section>
 
-        <!-- About Me -->
-          <section id="about" class="three">
+        <!-- Products --> -->
+          <section id="products" class="three">
             <div class="container">
 
               <header>
