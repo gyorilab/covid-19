@@ -122,8 +122,8 @@
 
                 <!-- col 2-->
                 <div class="col-4 col-12-mobile">
+                  <!-- network search -->
                   <article class="item">
-                    <!-- network search -->
                     <a href="https://network.indra.bio/" class="image fit"><img src="https://indra-covid19.s3.amazonaws.com/images/ACE2_search_options.png" alt="" /></a>
                     <header>
                       <h3>The INDRA Network Search</h3>
@@ -181,8 +181,125 @@
             </div>
           </section>
 
-        <!-- Products --> -->
+        <!-- Products -->
           <section id="products" class="three">
+            <div class="container">
+
+              <header>
+                <h2>Products</h2>
+              </header>
+
+              <p>Blurb about products</p>
+
+              <div class="row">
+                <!-- col 1-->
+                <div class="col-4 col-12-mobile">
+
+                  <!-- EMMAA COVID-19 -->
+                  <article class="item">
+                    <a href="https://emmaa.indra.bio/dashboard/covid19?tab=model" class="image fit"><img
+                      src="images/emmaa_covid19_model.png" alt="" /></a>
+                    <header>
+                      <h3>EMMMAA COVID-19</h3>
+                      The <a href="https://emmaa.indra.bio/dashboard/covid19?tab=model">EMMAA Covid-19 model</a> is a
+                      self-updating knowledge network automatically assembled from the CORD-19 document corpus.<br>
+                      Tests are checked daily against the latest signed and unsigend graph representations of the
+                      model.<br>
+                      A set of tests to check for drug responses have been manually curated and can be found
+                      <a href="https://emmaa.indra.bio/dashboard/covid19?tab=tests">here</a>. Another corpus of
+                      tests that is updated daily is available <a
+                      href="https://emmaa.indra.bio/dashboard/covid19?tab=tests&test_corpus=covid19_mitre_tests">
+                      here</a> (MITRE tests).
+                    </header>
+                  </article>
+
+                  <!-- INDRA Disease Maps Alignment -->
+                  <article class="item">
+                    <a href="https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps"
+                       class="image fit"><img src="" alt="This one needs an image" /></a>
+                    <header>
+                      <h3>Covid-19 Disease Maps Aligned INDRA Statements</h3>
+                      A set of INDRA statements aligned with the <a
+                      href="https://covid19map.elixir-luxembourg.org/minerva/">Covid-19 Disease Maps</a> obtained
+                      through the Minerva API can be assembled using a script found <a
+                      href="https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps">here</a>.
+                    </header>
+                  </article>
+                </div>
+
+                <!-- col 2-->
+                <div class="col-4 col-12-mobile">
+                  <article class="item">
+                    <!-- INDRA Disease Maps Grounding -->
+                    <a href="https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps/grounding"
+                       class="image fit"><img src="" alt="This one needs an image" /></a>
+                    <header>
+                      <h3>The INDRA Disease Maps Grounding</h3>
+                      The INDRA disease maps grounding finds missing references for disease map elements in the
+                      Covid-19 disease map using the <a href="https://github.com/indralab/gilda">Gilda system</a>.
+                      The INDRA disease maps grounding can be found <a
+                      href="https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps/grounding">here</a>.
+                    </header>
+                  </article>
+                  <!-- Paper Relevance Ranking Table -->
+                  <article class="item">
+                    <a href="https://github.com/indralab/covid-19/blob/master/covid_19/rank_docs.py"
+                       class="image fit"><img src="" alt="This one needs an image" /></a>
+                    <header>
+                      <h3>Paper Relevance Ranking Table</h3>
+                      Paper relevance ranking table: <a
+                      href="https://github.com/indralab/covid-19/blob/master/covid_19/rank_docs.py">
+                      https://github.com/indralab/covid-19/blob/master/covid_19/rank_docs.py</a><br>
+                      <i>Need to run script</i>
+                    </header>
+                  </article>
+                </div>
+
+                <!-- col 3-->
+                <div class="col-4 col-12-mobile">
+                  <!-- Drugs targeting -->
+                  <article class="item">
+                    <a href="https://indra-covid19.s3.amazonaws.com/drugs_for_target/ACE2.html" class="image fit"><img
+                      src="images/ace2_small_molecules.png"
+                      alt="Small molecules targeting ACE2" /></a>
+                    <header>
+                      <h3>Drugs Targeting Genes Relevant for SARS-CoV-2</h3>
+                      INDRA can assemble statements in a user friendly, browsable <a
+                      href="https://indra.readthedocs.io/en/latest/modules/assemblers/html_assembler.html">
+                      HTML format</a>. Here we have some examples of HTML pages displaying the knowledge assembled
+                      about the small molecules targeting some genes of interest in the context of COVID-19:<br>
+                      <a href="https://indra-covid19.s3.amazonaws.com/drugs_for_target/ACE2.html">ACE2</a>, <a
+                      href="https://indra-covid19.s3.amazonaws.com/drugs_for_target/TMPRSS2.html">TMPRSS2</a>, <a
+                      href="https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSB.html">CTSB</a>, <a
+                      href="https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSL.html">CTSL</a> and <a
+                      href="https://indra-covid19.s3.amazonaws.com/drugs_for_target/FURIN.html">FURIN</a>.
+                    </header>
+                  </article>
+                  <!-- SEMVIZ -->
+                  <article class="item">
+                    <a href="" class="image fit"><img
+                      src="images/semviz_indra_cord19.png"
+                      alt="SemViz dashboard" /></a>
+                    <header>
+                      <h3>SemViz: Semantic Visualization of Scientific Data</h3>
+                      <a href="https://www.semviz.org/">SemViz</a> (Semantic Visualization of Scientific Data)
+                      allows for exploration and discovery of the Covid-19 literature through semantic visualization
+                      and has been used to <a
+                       href="http://morbius.cs-i.brandeis.edu:23762/app/kibana#/dashboard/2b613e90-7cf0-11ea-8a44-496b85e05ba5">visualize knowledge
+                      </a> extracted by INDRA from the <a href="https://www.semanticscholar.org/cord19">CORD-19
+                      dataset</a>.
+                    </header>
+                  </article>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+        <!-- Integrations HERE -->
+
+        <!-- Abouts -->
+          <section id="about" class="three">
             <div class="container">
 
               <header>
