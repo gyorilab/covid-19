@@ -1992,7 +1992,8 @@ input, select, textarea {
         }
 
             .item header h3 {
-                font-size: 1em;
+                /*font-size: 1em; Replaced by line below by user */
+                font-size: 1.2em;
             }
 
 /* Icons */
@@ -2631,3 +2632,8 @@ input, select, textarea {
                 }
 
     }
+
+/* User specified */
+.pheader {
+    font-size: 90%;
+}
