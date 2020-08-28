@@ -49,9 +49,10 @@ def get_cord_info():
 
 
 def get_pmids_for_mesh_terms(mesh_list):
+    num_mesh_list = [int(mid[1:]) for mid in mesh_list]
     db = get_primary_db()
     res = db.select_all(db.MeshRefAnnotations.pmid_num,
-                        db.MeshRefAnnotations.mesh_num.in_(mesh_list))
+                        db.MeshRefAnnotations.mesh_num.in_(num_mesh_list))
     return [t[0] for t in res]
 
 
