@@ -2636,3 +2636,10 @@ input, select, textarea {
 .pheader {
     font-size: 90%;
 }
+
+ div.image > .logo {
+    display: block;
+    max-height: 250px;
+    width: auto;
+    height: auto;
+}
