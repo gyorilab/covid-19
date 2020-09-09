@@ -2636,9 +2636,10 @@ input, select, textarea {
     font-size: 90%;
 }
 
- div.image > .logo {
+div.image > .logo {
     display: block;
     max-height: 250px;
     width: auto;
     height: auto;
+    margin: auto;
 }
