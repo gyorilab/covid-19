@@ -96,6 +96,7 @@ here:
 CORD-19 documents prioritized for curators
 ------------------------------------------
 
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/cord19_ranking_screenshot.png" width="150"/>
 To support the COVID-19 Disease Map curator community, we generated a ranking
 of articles in the CORD-19 corpus by the amount of molecular mechanistic
 information they were likely to contain. For each article, the dataset lists 1)
