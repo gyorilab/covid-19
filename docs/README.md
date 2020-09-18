@@ -16,14 +16,14 @@ is working on understanding the mechanisms by which SARS-CoV-2 infects
 cells and the subsequent host response process, with the goal
 of finding new therapeutics using INDRA.
 
-- [COVID-19 results](#results)
-- [COVID-19 Integrations and collaborations](#integrations)
+- [Results](#results)
+- [Integrations and collaborations](#integrations)
 - [General technologies for COVID-19](#general)
 - [Funding](#funding)
 
 
-COVID-19 results
-================
+Results
+=======
 
 A self-updating model of COVID-19 literature
 --------------------------------------------
@@ -85,29 +85,73 @@ here:
 [`CTSL`]((https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSL.html))
 [`FURIN`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/FURIN.html)
 
+Semantic search over INDRA COVID-19 results
+-------------------------------------------
+
+Another interface for browsing INDRA COVID-19 literature assembly results
+is available via [`semviz.org`](https://www.semviz.org/)
+on [`this page`](http://morbius.cs-i.brandeis.edu:23762/login?next=%2Fapp%2Fkibana#/dashboard/2b613e90-7cf0-11ea-8a44-496b85e05ba5) (login: semvizuser/semviz), an approach to semantic
+browsing of biomedical relations developed at [`Brandeis University`](https://brandeis-llc.github.io/).
+A tutorial video of using this interface with INDRA results to construct
+hypotheses about COVID-19 is available [`here`](http://www.voxicon.net/wp-content/uploads/2020/06/semviz.mp4).
+
+Integrations and collaborations
+===============================
+
+CoronaWhy
+---------
+
+CoronaWhy is a globally distributed, volunteer-powered research organisation,
+assisting the medical community’s ability to answer key questions
+related to COVID-19.
+
+INDRA is a key part of the [`CoronaWhy software infrastructure`](https://www.coronawhy.org/services)
+as an entrypoint to access multiple text-mining systems and pathway databases
+and assembling causal models from these soures.
+
+COVIDminer
+----------
+
+INDRA coupled to Reach serves as the back-end for the
+[`COVIDminer`](https://rupertoverall.net/covidminer/) application developed by
+[`Rupert Overall`](https://rupertoverall.net/). COVIDminer allows searching for
+entities of interest for COVID-19 and visualizing the set of interactions in
+their neighborhood as a graph. By clicking on graph nodes or edges, users can
+learn more about each entity as well as the supporting publication and the
+specific sentence serving as evidence for relations.
 
 General technologies for COVID-19
 =================================
 There are several applications built on top of INDRA that that are generally
 applicable to biomedical research and can therefore also be used to study
 COVID-19 mechanisms.
+- [`INDRA`](https://www.indra.bio): INDRA can be used as a [`Python package`](https://github.com/sorgerlab/indra)
+  or a [`web service`](http://api.indra.bio:8000) to collect relevant
+  information from the literature and pathway databases and build custom
+  COVID-19 models.
 - [`INDRA database`](https://db.indra.bio): The INDRA database website provides
   a search interface to find INDRA Statements assembled from the biomedical
-  literature, browse their supporting evidence, and curate any errors.  Az
+  literature, browse their supporting evidence, and curate any errors. An
   example search relevant to COVID-19 is Object: TMPRSS2 to find entities that
   regulate the TMPRSS2 protease, which is crucial for SARS-CoV-2 entry into
   human cells.
 - [`INDRA network search`](https://network.indra.bio): The INDRA network search
   allows finding causal paths, shared regulators, and common targets between
-  two entities. An example search relevant to COVID-19 is Subject: bradykinin,
-  Object: PKC (see [`here`](https://network.indra.bio/query?query=2094257329)).
+  two entities. An example search relevant to COVID-19 is Subject: ACE2,
+  Object: MTOR (see [`here`](https://network.indra.bio/query?query=2495855313)).
 - [`Dialogue.bio`](http://dialogue.bio): The dialogue.bio website allows
   launching dedicated human-machine dialogue sessions where you can upload your
   data (e.g., DE gene lists or gene expression profiles), discuss relevant
   mechanisms, and build model hypotheses using simple English dialogue.
   For instance, you could try the following series of questions:
-  "what is Nav1.8?", "what does it regulate?",
+  "what is ACE2?", "what does it regulate?",
   "which of those are transcription factors?".
+- CLARE is a machine assistant that can be installed in any Slack workspace as
+  an application. It supports direct messages or messages in channels to
+  conduct dialogues about biological mechanisms. See demo video [`here`](http://sorger.med.harvard.edu/data/bgyori/clare_intro.mov). It is currently deployed in multiple workspaces
+  and has answered hundreds of questions from COVID-19 researchers since
+  the pandemic began. Please [`contact us`](benjamin_gyori@hms.harvard.edu)
+  if you would like to install CLARE in your Slack workspace.
 
 Funding
 -------
