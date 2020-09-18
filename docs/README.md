@@ -1,9 +1,9 @@
 INDRA applications and models for COVID-19
 ==========================================
 
-<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/lsp_logo.png" height="50"/>
-<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hits_logo.png" height="50"/>
-<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hms_logo.png" height="50"/>
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/lsp_logo.png" height="30"/>
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hits_logo.png" height="30"/>
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hms_logo.png" height="30"/>
 
 <br/>
 
