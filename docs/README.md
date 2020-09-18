@@ -93,8 +93,8 @@ here:
 [`CTSL`]((https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSL.html))
 [`FURIN`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/FURIN.html).
 
-CORD-19 documents prioritized for curators
-------------------------------------------
+CORD-19 documents prioritized for pathway curators
+--------------------------------------------------
 
 <img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/cord19_ranking_screenshot.png" width="150"/>
 To support the COVID-19 Disease Map curator community, we generated a ranking
