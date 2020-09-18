@@ -93,6 +93,23 @@ here:
 [`CTSL`]((https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSL.html))
 [`FURIN`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/FURIN.html).
 
+CORD-19 documents prioritized for curators
+------------------------------------------
+
+To support the COVID-19 Disease Map curator community, we generated a ranking
+of articles in the CORD-19 corpus by the amount of molecular mechanistic
+information they were likely to contain. For each article, the dataset lists 1)
+the total number of mechanistic events extracted by all NLP systems supported by
+INDRA, 2) the number of *unique* events extracted from the document, and
+3) the number of unique events where subject and object were both molecular
+entities (i.e., protein or chemical). Because the CORD-19 corpus contains
+many documents that are not directly relevant to coronavirus biology, we
+also generated rankings for the subset of documents tagged with the MESH
+term for "coronavirus" in PubMed (MESH ID D017934). The datasets are available
+at the links below:
+[`All CORD-19 articles`](https://indra-covid19.s3.amazonaws.com/covid_docs_ranked_all.csv)
+[`Coronavirus articles only`](https://indra-covid19.s3.amazonaws.com/covid_docs_ranked_corona.csv)
+
 <br/>
 
 Semantic search over INDRA COVID-19 results
