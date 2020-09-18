@@ -1,6 +1,11 @@
 INDRA applications and models for COVID-19
 ==========================================
 
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/lsp_logo.png" width="50"/>
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hits_logo.png" width="50"/>
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hms_logo.png" width="50"/>
+
+
 <img align="left" src="https://raw.githubusercontent.com/sorgerlab/indra/master/doc/indra_logo.png" width="134" height="100" />
 INDRA integrates multiple text-mining systems and pathway databases to
 automatically extract mechanistic knowledge from the biomedical literature and
@@ -17,8 +22,8 @@ cells and the subsequent host response process, with the goal
 of finding new therapeutics using INDRA.
 
 - [Results](#results)
-- [Integrations and collaborations](#integrations)
-- [General technologies for COVID-19](#general)
+- [Integrations and collaborations](#integrations-and-collaborations)
+- [General technologies for COVID-19](#general-technologies-for-covid-19)
 - [Funding](#funding)
 
 
@@ -53,6 +58,7 @@ drug-response experiments available [`here`](https://emmaa.indra.bio/dashboard/c
 INDRA aligned with the COVID-19 Disease Map
 -------------------------------------------
 
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/disease_map.png" width="150"/>
 The [`COVID-19 Disease Map`](https://www.nature.com/articles/s41597-020-0477-8)
 brings together top pathway curators and modelers from around the world
 to create a set of models to elucidate the molecular mechanisms behind
@@ -73,6 +79,7 @@ this are available
 Reports on drugs affecting targets relevant for COVID-19
 --------------------------------------------------------
 
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/ace2_small_molecules.png" width="150"/>
 We used INDRA to assemble all known small molecules that can inhibt a set of
 protein targets that are of particular interest in treating COVID-19.
 These reports are organized as browseable web pages that allow drilling down
@@ -88,6 +95,7 @@ here:
 Semantic search over INDRA COVID-19 results
 -------------------------------------------
 
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/semviz.png" width="150"/>
 Another interface for browsing INDRA COVID-19 literature assembly results
 is available via [`semviz.org`](https://www.semviz.org/)
 on [`this page`](http://morbius.cs-i.brandeis.edu:23762/login?next=%2Fapp%2Fkibana#/dashboard/2b613e90-7cf0-11ea-8a44-496b85e05ba5) (login: semvizuser/semviz), an approach to semantic
@@ -101,6 +109,8 @@ Integrations and collaborations
 CoronaWhy
 ---------
 
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/coronawhy.png" width="150"/>
+
 CoronaWhy is a globally distributed, volunteer-powered research organisation,
 assisting the medical community’s ability to answer key questions
 related to COVID-19.
@@ -112,6 +122,7 @@ and assembling causal models from these soures.
 COVIDminer
 ----------
 
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/covidminer.png" width="150"/>
 INDRA coupled to Reach serves as the back-end for the
 [`COVIDminer`](https://rupertoverall.net/covidminer/) application developed by
 [`Rupert Overall`](https://rupertoverall.net/). COVIDminer allows searching for
@@ -122,9 +133,9 @@ specific sentence serving as evidence for relations.
 
 General technologies for COVID-19
 =================================
-There are several applications built on top of INDRA that that are generally
-applicable to biomedical research and can therefore also be used to study
-COVID-19 mechanisms.
+We have developed several applications that are generally applicable to
+biomedical research and can therefore also be used to study COVID-19.
+
 - [`INDRA`](https://www.indra.bio): INDRA can be used as a [`Python package`](https://github.com/sorgerlab/indra)
   or a [`web service`](http://api.indra.bio:8000) to collect relevant
   information from the literature and pathway databases and build custom
