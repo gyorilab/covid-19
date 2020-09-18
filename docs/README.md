@@ -93,6 +93,8 @@ here:
 [`CTSL`]((https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSL.html))
 [`FURIN`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/FURIN.html).
 
+<br/>
+
 Semantic search over INDRA COVID-19 results
 -------------------------------------------
 
@@ -167,6 +169,7 @@ biomedical research and can therefore also be used to study COVID-19.
 
 Funding
 -------
-This project is funded under the DARPA Communicating with Computers
-(W911NF-15-1-0544) and DARPA Automating Scientific Knowledge Extraction
-(HR00111990009) programs.
+This work is funded under the DARPA Communicating with Computers
+(W911NF-15-1-0544), DARPA Automating Scientific Knowledge Extraction
+(HR00111990009) and DARPA Automated Scientific Discovery Framework
+(W911NF-18-1-0124) programs.
