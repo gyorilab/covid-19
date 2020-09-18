@@ -1,10 +1,11 @@
 INDRA applications and models for COVID-19
 ==========================================
 
-<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/lsp_logo.png" width="50"/>
-<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hits_logo.png" width="50"/>
-<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hms_logo.png" width="50"/>
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/lsp_logo.png" height="50"/>
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hits_logo.png" height="50"/>
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/hms_logo.png" height="50"/>
 
+<br/>
 
 <img align="left" src="https://raw.githubusercontent.com/sorgerlab/indra/master/doc/indra_logo.png" width="134" height="100" />
 INDRA integrates multiple text-mining systems and pathway databases to
@@ -90,7 +91,7 @@ here:
 [`TMPRSS2`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/TMPRSS2.html)
 [`CTSB`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSB.html)
 [`CTSL`]((https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSL.html))
-[`FURIN`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/FURIN.html)
+[`FURIN`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/FURIN.html).
 
 Semantic search over INDRA COVID-19 results
 -------------------------------------------
