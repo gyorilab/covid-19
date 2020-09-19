@@ -81,7 +81,7 @@ Reports on drugs affecting targets relevant for COVID-19
 --------------------------------------------------------
 
 <img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/ace2_small_molecules.png" width="150"/>
-We used INDRA to assemble all known small molecules that can inhibt a set of
+We used INDRA to assemble all known small molecules that can inhibit a set of
 protein targets that are of particular interest in treating COVID-19.
 These reports are organized as browseable web pages that allow drilling down
 into specific literature evidence, linking to supporting publications, and
@@ -92,6 +92,14 @@ here:
 [`CTSB`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSB.html)
 [`CTSL`]((https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSL.html))
 [`FURIN`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/FURIN.html).
+
+We also compiled similar reports on the downstream effects of some specific
+drugs of interest to our collaborators. These can be found here:
+[`amodiaquine`](https://indra-covid19.s3.amazonaws.com/targets_for_drug/amodiaquine.html)
+[`hydroxychloroquine`](https://indra-covid19.s3.amazonaws.com/targets_for_drug/hydroxychloroquine.html)
+
+While we added some customizations to these reports, similar results can
+be obtained by querying the [`INDRA DB`](https://db.indra.bio/lates) directly.
 
 CORD-19 documents prioritized for pathway curators
 --------------------------------------------------
@@ -129,7 +137,6 @@ Integrations and collaborations
 
 CoronaWhy
 ---------
-
 <img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/coronawhy.png" width="150"/>
 
 CoronaWhy is a globally distributed, volunteer-powered research organisation,
@@ -138,11 +145,10 @@ related to COVID-19.
 
 INDRA is a key part of the [`CoronaWhy software infrastructure`](https://www.coronawhy.org/services)
 as an entrypoint to access multiple text-mining systems and pathway databases
-and assembling causal models from these soures.
+and assembling causal models from these sources.
 
 COVIDminer
 ----------
-
 <img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/covidminer.png" width="150"/>
 INDRA coupled to Reach serves as the back-end for the
 [`COVIDminer`](https://rupertoverall.net/covidminer/) application developed by
