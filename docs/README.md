@@ -47,6 +47,9 @@ integrates all literature made available under the
 papers from PubMed (about 300 every day) as well as bioRxiv and
 medRxiv preprints. It also integrates content from CTD, DrugBank, VirHostNet,
 and many other pathway databases.
+- The set of all statements in the model can be browsed and curated [`here`](https://emmaa.indra.bio/all_statements/covid19?sort_by=evidence&page=1&filter_curated=False).
+- This is a stable link to get the latest dump of all statements in the model
+as JSON: [`here`](https://emmaa.s3.amazonaws.com/assembled/covid19/latest_statements_covid19.json).
 
 The model is also used to construct casual, mechanistic explanations to around
 2,800 drug-virus effects:
