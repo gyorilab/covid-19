@@ -59,6 +59,11 @@ available [`here`](https://emmaa.indra.bio/dashboard/covid19?tab=tests&test_corp
 - Explanations for drug-virus effects curated from papers describing
 drug-response experiments available [`here`](https://emmaa.indra.bio/dashboard/covid19?tab=tests&test_corpus=covid19_curated_tests).
 
+<img align="left" src="https://raw.githubusercontent.com/indralab/covid-19/website/docs/covid19_twitter_small.png" width="150"/>
+The EMMAA COVID-19 model is also on Twitter ([`@covid19_emmaa`](https://twitter.com/covid19_emmaa)) where it provides daily updates on what it learned and any
+new experimental observations (such as drug effects on viruses, as described
+above) that it could explain based on these new pieces of knowledge.
+
 INDRA aligned with the COVID-19 Disease Map
 -------------------------------------------
 
