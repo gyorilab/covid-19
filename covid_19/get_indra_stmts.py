@@ -10,7 +10,7 @@ from itertools import groupby
 from collections import defaultdict
 from os.path import abspath, dirname, join
 from indra.util import batch_iter
-from indra_db import get_primary_db
+from indra_db.util import get_db
 from indra_db.util import distill_stmts
 from indra.statements import stmts_from_json, stmts_to_json
 from indra.tools import assemble_corpus as ac
@@ -34,7 +34,7 @@ def get_unique_text_refs():
     pmids = [fix_pmid(pmid) for pmid in get_ids('pubmed_id')]
     dois = [fix_doi(doi) for doi in get_ids('doi')]
     # Get unique text_refs from the DB
-    db = get_primary_db()
+    db = get_db('primary')
     print("Getting TextRefs by PMCID")
     tr_pmcids = db.select_all(db.TextRef.id, db.TextRef.pmcid_in(pmcids))
     print("Getting TextRefs by PMID")
@@ -57,7 +57,7 @@ def get_text_refs_for_pubmed_search_term(search_term, **kwargs):
     print('Searching for %s' % search_term)
     pmids = pubmed_client.get_ids(search_term, **kwargs)
     print('Getting TextRefs for %d PMIDs' % len(pmids))
-    db = get_primary_db()
+    db = get_db('primary')
     tr_pmids = db.select_all(db.TextRef.id, db.TextRef.pmid_in(pmids))
     trids = {res.id for res in tr_pmids}
     return trids
@@ -97,7 +97,7 @@ def get_indradb_pa_stmts():
 
 
 def get_reach_readings(tr_dicts, dump_dir=None):
-    db = get_primary_db()
+    db = get_db('primary')
     # Get text ref dicts with article metadata aligned between DB and CORD19
     # Get REACH readings 
     reach_data = db.select_all((db.Reading, db.TextRef,
@@ -165,7 +165,7 @@ def get_raw_stmts(tr_dicts, date_limit=None):
         Raw INDRA Statements retrieved from the INDRA DB.
     """
     # Get raw statement IDs from the DB for the given TextRefs
-    db = get_primary_db()
+    db = get_db('primary')
     # Get statements for the given text refs
     text_ref_ids = list(tr_dicts.keys())
     print(f"Distilling statements for {len(text_ref_ids)} TextRefs")

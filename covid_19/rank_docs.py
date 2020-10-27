@@ -6,7 +6,7 @@ from indra.preassembler import Preassembler
 from indra.ontology.bio import bio_ontology
 from indra.tools import assemble_corpus as ac
 from indra.databases.mesh_client import mesh_id_to_tree_numbers, get_mesh_name
-from indra_db import get_primary_db
+from indra_db import get_db
 from covid_19.emmaa_update import stmts_by_text_refs
 from covid_19.preprocess import get_metadata_dict
 
@@ -49,7 +49,7 @@ def get_cord_info():
 
 
 def get_pmids_for_mesh_terms(mesh_list):
-    db = get_primary_db()
+    db = get_db('primary')
     res = db.select_all(db.MeshRefAnnotations.pmid,
                         db.MeshRefAnnotations.mesh_id.in_(mesh_list))
     return [t[0] for t in res]

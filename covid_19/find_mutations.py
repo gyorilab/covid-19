@@ -2,7 +2,7 @@ import re
 import csv
 from covid_19.preprocess import get_metadata_dict, get_zip_texts_for_entry, \
                                 get_metadata_df, get_all_texts
-from indra_db import get_primary_db
+from indra_db.util import get_db
 
 
 covid_docs_file = '../covid_docs_ranked_corona.csv'
