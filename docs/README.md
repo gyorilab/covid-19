@@ -107,7 +107,7 @@ drugs of interest to our collaborators. These can be found here:
 [`hydroxychloroquine`](https://indra-covid19.s3.amazonaws.com/targets_for_drug/hydroxychloroquine.html)
 
 While we added some customizations to these reports, similar results can
-be obtained by querying the [`INDRA DB`](https://db.indra.bio/lates) directly.
+be obtained by querying the [`INDRA DB`](https://db.indra.bio/) directly.
 
 CORD-19 documents prioritized for pathway curators
 --------------------------------------------------
