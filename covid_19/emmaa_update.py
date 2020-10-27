@@ -93,6 +93,7 @@ def make_model_stmts(old_mm_stmts, other_stmts, new_cord_stmts=None):
     # Now, add back in all other statements
     combined_stmts = updated_mm_stmts + other_stmts
     logger.info('Got %d total statements.' % len(combined_stmts))
+    logger.info('Processed %d papers.' % len(updated_mm_stmts_by_tr))
     return combined_stmts, updated_mm_stmts_by_tr.keys()
 
 if __name__ == '__main__':
