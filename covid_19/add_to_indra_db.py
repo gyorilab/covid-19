@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 from collections import defaultdict
 from indra.util import batch_iter
-from indra_db import get_primary_db
+from indra_db.util import get_db
 from indra.literature import id_lookup
 from indra.literature import pubmed_client
 from indra_db.managers import content_manager
@@ -250,6 +250,6 @@ if __name__ == '__main__':
     md = [e for e in md if e['doi'] and
                            e['doi'].upper() != '0.1126/SCIENCE.ABB7331']
     cm = Cord19Manager(md)
-    db = get_primary_db()
+    db = get_db('primary')
     res = cm.populate(db)
 

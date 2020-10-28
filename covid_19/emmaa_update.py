@@ -55,6 +55,8 @@ def make_model_stmts(old_mm_stmts, other_stmts, new_cord_stmts=None):
     -------
     combined_stmts : list[indra.statements.Statement]
         A list of statements to make a new model from.
+    paper_ids : list[str]
+        A list of TRIDs associated with statements.
     """
     # If new cord statements are not provided, load from database
     if not new_cord_stmts:
@@ -91,7 +93,8 @@ def make_model_stmts(old_mm_stmts, other_stmts, new_cord_stmts=None):
     # Now, add back in all other statements
     combined_stmts = updated_mm_stmts + other_stmts
     logger.info('Got %d total statements.' % len(combined_stmts))
-    return combined_stmts
+    logger.info('Processed %d papers.' % len(updated_mm_stmts_by_tr))
+    return combined_stmts, updated_mm_stmts_by_tr.keys()
 
 if __name__ == '__main__':
     # Example:
@@ -145,7 +148,7 @@ if __name__ == '__main__':
 
     other_stmts = drug_stmts + gordon_stmts + virhostnet_stmts + ctd_stmts
 
-    combined_stmts = make_model_stmts(
+    combined_stmts, _ = make_model_stmts(
         old_mm_stmts, other_stmts, new_cord_stmts)
 
     # Dump new pickle
