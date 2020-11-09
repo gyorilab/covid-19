@@ -7,6 +7,7 @@ from collections import defaultdict
 from indra.statements import Agent, Inhibition, Evidence
 from indra.ontology.standardize \
     import standardize_agent_name
+from indra.statements.validate import print_validation_report
 from emmaa.model_tests import StatementCheckingTest
 
 
@@ -111,12 +112,22 @@ def get_with_drug_statement(rel, evidences):
 def get_evidence(ev):
     annot_args = ['pubIDRelationScore', 'sentenceRelationScore',
                   'researchStage']
+    article_id = ev.get('articleID')
+    text_refs = {}
+    pmid = None
+    if article_id is not None:
+        if article_id.startswith('NCT'):
+            text_refs['CLINICALTRIALS'] = article_id
+        else:
+            pmid = article_id
+            text_refs['PMID'] = article_id
     # TODO: handle DOIs
     return Evidence(
         source_api='mitre_covid',
         text=ev.get('sentence'),
-        pmid=ev.get('articleID'),
-        annotations={arg: ev.get(arg) for arg in annot_args}
+        pmid=pmid,
+        annotations={arg: ev.get(arg) for arg in annot_args},
+        text_refs=text_refs
     )
 
 
@@ -138,6 +149,7 @@ if __name__ == '__main__':
         get_with_drug_statement(rels[rel_id], evs[rel_id])
         for rel_id in with_drug_rels
     ]
+    print_validation_report(with_drug_stmts)
     test_stmts = [StatementCheckingTest(stmt)
                   for stmt in with_drug_stmts]
 
