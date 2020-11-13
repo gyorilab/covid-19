@@ -1,7 +1,41 @@
 import pickle
 from indra.sources import indra_db_rest
 import indra.tools.assemble_corpus as ac
+from indra.ontology.bio import bio_ontology
 from indra.statements import Inhibition, Complex
+from indra.databases.identifiers import ensure_chembl_prefix, \
+    ensure_chebi_prefix
+
+
+def filter_db_support(stmts):
+    print('Filtering %d statements for DB support' % len(stmts))
+    new_stmts = []
+    text_mining_sources = {'reach', 'trips', 'sparser', 'eidos',
+                           'medscan', 'isi', 'rlimsp'}
+    for stmt in stmts:
+        sources = {ev.source_api for ev in stmt.evidence}
+        if sources - text_mining_sources:
+            new_stmts.append(stmt)
+    print('Left with %d statements after filter for DB support' %
+          len(new_stmts))
+    return new_stmts
+
+
+def fix_invalid(stmts):
+    for stmt in stmts:
+        for agent in stmt.real_agent_list():
+            if 'CHEBI' in agent.db_refs:
+                agent.db_refs['CHEBI'] = \
+                    ensure_chebi_prefix(agent.db_refs['CHEBI'])
+            if 'CHEMBL' in agent.db_refs:
+                agent.db_refs['CHEMBL'] = \
+                    ensure_chembl_prefix(agent.db_refs['CHEMBL'])
+
+        for ev in stmt.evidence:
+            if ev.pmid == 'Other':
+                ev.pmid = None
+            if ev.text_refs.get('PMID') == 'Other':
+                ev.text_refs.pop('PMID', None)
 
 
 if __name__ == '__main__':
@@ -24,7 +58,10 @@ if __name__ == '__main__':
             else:
                 db_ns, db_id = ('NAME', agent.name)
         groundings.add((db_ns, db_id))
+        for db_ns, db_id in bio_ontology.get_children(db_ns, db_id):
+            groundings.add((db_ns, db_id))
 
+    print('Found a total of %d groundings to look up' % len(groundings))
 
     all_stmts = {}
     for db_ns, db_id in groundings:
@@ -48,6 +85,9 @@ if __name__ == '__main__':
             all_stmts[stmt.get_hash()] = stmt
 
     stmts = list(all_stmts.values())
+    stmts = filter_db_support(stmts)
 
-    with open('../stmts/drug_stmts.pkl', 'wb') as fh:
+    stmts = fix_invalid(stmts)
+
+    with open('../stmts/drug_stmts_v3.pkl', 'wb') as fh:
         pickle.dump(stmts, fh)

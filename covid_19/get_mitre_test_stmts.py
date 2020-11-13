@@ -162,5 +162,5 @@ if __name__ == '__main__':
 
     test_fname = os.path.join(here, os.pardir, 'stmts',
                               'covid19_mitre_tests.pkl')
-    #with open(test_fname, 'wb') as fh:
-    #    pickle.dump(test_stmts, fh)
+    with open(test_fname, 'wb') as fh:
+        pickle.dump(test_stmts, fh)
