@@ -36,18 +36,10 @@ def fix_invalid(stmts):
                 ev.pmid = None
             if ev.text_refs.get('PMID') == 'Other':
                 ev.text_refs.pop('PMID', None)
+    return stmts
 
 
-if __name__ == '__main__':
-    with open('../stmts/covid19_curated_tests.pkl', 'rb') as fh:
-        stmts = pickle.load(fh)
-
-    with open('../stmts/covid19_mitre_tests.pkl', 'rb') as fh:
-        stmts += pickle.load(fh)
-
-    drug_agents = [stmt.stmt.subj for stmt in stmts]
-                   #if stmt.stmt.evidence[0].source_api == 'hypothes.is']
-
+def get_drug_groundings(drug_agents):
     groundings = set()
     for agent in drug_agents:
         db_ns, db_id = agent.get_grounding()
@@ -62,7 +54,10 @@ if __name__ == '__main__':
             groundings.add((db_ns, db_id))
 
     print('Found a total of %d groundings to look up' % len(groundings))
+    return groundings
 
+
+def get_statements(groundings):
     all_stmts = {}
     for db_ns, db_id in groundings:
         print('Searching for %s@%s' % (db_id, db_ns))
@@ -70,7 +65,7 @@ if __name__ == '__main__':
                                            ev_limit=100)
         stmts = idp.statements
         stmts = ac.filter_by_type(stmts, Inhibition) + \
-            ac.filter_by_type(stmts, Complex)
+                ac.filter_by_type(stmts, Complex)
         new_stmts = []
         for stmt in stmts:
             new_ev = []
@@ -86,8 +81,20 @@ if __name__ == '__main__':
 
     stmts = list(all_stmts.values())
     stmts = filter_db_support(stmts)
-
     stmts = fix_invalid(stmts)
+    return stmts
 
+
+if __name__ == '__main__':
+    with open('../stmts/covid19_curated_tests.pkl', 'rb') as fh:
+        stmts = pickle.load(fh)
+
+    with open('../stmts/covid19_mitre_tests.pkl', 'rb') as fh:
+        stmts += pickle.load(fh)
+
+    drug_agents = [stmt.stmt.subj for stmt in stmts]
+                   #if stmt.stmt.evidence[0].source_api == 'hypothes.is']
+    groundings = get_drug_groundings(drug_agents)
+    drug_stmts = get_statements(groundings)
     with open('../stmts/drug_stmts_v3.pkl', 'wb') as fh:
-        pickle.dump(stmts, fh)
+        pickle.dump(drug_stmts, fh)
