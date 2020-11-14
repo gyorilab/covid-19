@@ -1,4 +1,5 @@
 import pickle
+from indra.statements.agent import default_ns_order
 from indra.sources import indra_db_rest
 import indra.tools.assemble_corpus as ac
 from indra.ontology.bio import bio_ontology
@@ -41,8 +42,9 @@ def fix_invalid(stmts):
 
 def get_drug_groundings(drug_agents):
     groundings = set()
+    ns_order = default_ns_order + ['CHEMBL']
     for agent in drug_agents:
-        db_ns, db_id = agent.get_grounding()
+        db_ns, db_id = agent.get_grounding(ns_order=ns_order)
         if db_ns is None:
             print('No grounding for %s (%s)' % (agent, str(agent.db_refs)))
             if 'TEXT' in agent.db_refs:
@@ -57,7 +59,7 @@ def get_drug_groundings(drug_agents):
     return groundings
 
 
-def get_statements(groundings):
+def get_drug_statements(groundings):
     all_stmts = {}
     for db_ns, db_id in groundings:
         print('Searching for %s@%s' % (db_id, db_ns))
@@ -95,6 +97,6 @@ if __name__ == '__main__':
     drug_agents = [stmt.stmt.subj for stmt in stmts]
                    #if stmt.stmt.evidence[0].source_api == 'hypothes.is']
     groundings = get_drug_groundings(drug_agents)
-    drug_stmts = get_statements(groundings)
+    drug_stmts = get_drug_statements(groundings)
     with open('../stmts/drug_stmts_v3.pkl', 'wb') as fh:
         pickle.dump(drug_stmts, fh)
