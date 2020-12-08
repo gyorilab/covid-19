@@ -40,6 +40,13 @@ mappings = {
     }
 
 
+text_refs = {
+    'DOI': '10.1038/s41586-020-2286-9',
+    'PMID': '32353859',
+    'PMCID': 'PMC7431030'
+    }
+
+
 def reground_stmts(stmts):
     for stmt in stmts:
         for agent in stmt.agent_list():
@@ -47,6 +54,10 @@ def reground_stmts(stmts):
                 refs = mappings[agent.name]
                 agent.db_refs = refs
                 agent.db_refs['TEXT'] = agent.name
+        for ev in stmt.evidence:
+            ev.pmid = text_refs['PMID']
+            # Just to make a copy here
+            ev.text_refs = {k: v for k, v in text_refs.items()}
     return stmts
 
 
