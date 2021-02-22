@@ -12,7 +12,7 @@ in the disease maps.
 
 ## Availability
 
-The query for all entities yields a total of 656,418 INDRA Statements.
+The query for all entities yields a total of 985,774 INDRA Statements.
 These statements are available as a gzipped JSON dump at
 
 - https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_full.json.gz
@@ -22,7 +22,7 @@ Statement objects directly) at
 
 - https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_full.pkl
 
-The filtered corpus contains 40,361 INDRA Statements.
+The filtered corpus contains 73,333 INDRA Statements.
 These statements are available as a gzipped JSON dump at
 
 - https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_filtered.json.gz
@@ -31,6 +31,17 @@ and as a Python pickle file (which can be deserialized into INDRA
 Statement objects directly) at
 
 - https://indra-covid19.s3.amazonaws.com/disease_maps/disease_map_indra_stmts_filtered.pkl
+
+## Update Feb 22, 2021
+We have updated again the content of the INDRA Statement dumps to reflect the latest
+state of the COVID-19 Disease Map, as well as the INDRA content which has been
+extended significantly since the last update. The size of the unfiltered corpus
+increased from 656,418 to 985,774 statements, whereas the size of the filtered corpus
+increased from 40,361 to 73,333 statements.
+
+The previous output created on May 25, 2020 is available, with the same file
+names under the https://indra-covid19.s3.amazonaws.com/disease_maps/20200609
+prefix.
 
 ## Update June 9, 2020
 We have updated the content of the INDRA Statement dumps with a more
