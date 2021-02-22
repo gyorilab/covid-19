@@ -79,6 +79,10 @@ for all interactions in the COVID-19 Disease Map, and to suggest other
 mechanisms that haven't yet been included. The results are available
 [`here`](https://github.com/indralab/covid-19/tree/master/covid_19/disease_maps).
 
+We also implemented a feature - based on the above alignment - to find
+small molecule inhibitors for a given pathway in the COVID-19 Disease Map.
+The results for the [`Interferon Type I pathway are available here`](https://indra-covid19.s3.amazonaws.com/disease_maps/all_inhibitors_interferon_1_pathway.html).
+
 We also used our [`Gilda`](https://github.com/indralab/gilda) system to find
 appropriate grounding (database
 identifiers) to ungrounded entities used in the Disease Map. The results of
