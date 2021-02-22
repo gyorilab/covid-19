@@ -2,6 +2,7 @@
 for a given project, map them to INDRA-compatible db_refs, and standardize,
 and prioritize them to find a unique grounding key that allows looking
 up INDRA statements for the given entity."""
+import csv
 from covid_19.disease_maps.minerva_client import \
     get_all_valid_element_refs, default_map_name
 from indra.statements.agent import default_ns_order
@@ -61,8 +62,12 @@ def get_unique_prioritized_keys(map_name=default_map_name):
 
 
 if __name__ == '__main__':
+    version = 'v2'
     keys = get_unique_prioritized_keys(default_map_name)
-    with open('minerva_disease_map_indra_ids.csv', 'w') as fh:
-        for db_ns, db_id in sorted(keys):
-            name = get_standard_name({db_ns: db_id})
-            fh.write('%s,%s,%s\n' % (db_ns, db_id, name))
+    rows = []
+    for db_ns, db_id in sorted(keys):
+        name = get_standard_name({db_ns: db_id})
+        rows.append([db_ns, db_id, '' if name is None else name])
+    with open(f'minerva_disease_map_indra_ids_{version}.csv', 'w') as fh:
+        writer = csv.writer(fh)
+        writer.writerows(rows)

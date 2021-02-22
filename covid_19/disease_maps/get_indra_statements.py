@@ -1,4 +1,6 @@
+import csv
 import json
+import tqdm
 import pickle
 from indra.sources import indra_db_rest, tas
 from indra.tools import assemble_corpus as ac
@@ -82,7 +84,7 @@ def filter_out_source_evidence(stmts, sources):
 
 
 if __name__ == '__main__':
-
+    version = 'v2'
     # Loading premliminary data structures
     db = get_db('primary')
     db_curations = get_curations(db=db)
@@ -93,8 +95,9 @@ if __name__ == '__main__':
     with open('black_list.txt', 'r') as fh:
         black_list = {line.strip() for line in fh.readlines()}
 
-    with open('minerva_disease_map_indra_ids.csv', 'r') as fh:
-        groundings = [line.strip().split(',') for line in fh.readlines()]
+    with open(f'minerva_disease_map_indra_ids_{version}.csv', 'r') as fh:
+        reader = csv.reader(fh)
+        groundings = [line for line in reader]
 
     with open('../../grounding_map.json', 'r') as fh:
         grounding_map = json.load(fh)
@@ -102,7 +105,7 @@ if __name__ == '__main__':
 
     # Querying for and assembling statements
     all_stmts = []
-    for db_ns, db_id, name in groundings:
+    for db_ns, db_id, name in tqdm.tqdm(groundings):
         if db_id in black_list:
             print('Skipping %s in black list' % name)
             continue
@@ -119,14 +122,16 @@ if __name__ == '__main__':
     ########################################
 
     # Dunp results
-    with open('disease_map_indra_stmts_full.pkl', 'wb') as fh:
+    with open(f'disease_map_indra_stmts_full_{version}.pkl', 'wb') as fh:
         pickle.dump(all_stmts, fh)
 
-    stmts_to_json_file(all_stmts, 'disease_map_indra_stmts_full.json')
+    stmts_to_json_file(all_stmts,
+                       f'disease_map_indra_stmts_full_{version}.json')
 
     filtered_stmts = filter_prior_all(all_stmts, groundings)
-    with open('disease_map_indra_stmts_filtered.pkl', 'wb') as fh:
+    with open(f'disease_map_indra_stmts_filtered_{version}.pkl', 'wb') as fh:
         pickle.dump(filtered_stmts, fh)
 
-    stmts_to_json_file(filtered_stmts, 'disease_map_indra_stmts_filtered.json')
+    stmts_to_json_file(filtered_stmts,
+                       f'disease_map_indra_stmts_filtered_{version}.json')
     ##################
