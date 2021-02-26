@@ -231,17 +231,17 @@ def cord19_metadata_for_trs(text_ref_dicts, md):
     """Get unified text_ref info given TextRef dictionaries and CORD19 metadata."""
     # Build up a sect of dictionaries for reverse lookup of TextRefs by
     # different IDs (DOI, PMC, PMID, etc.)
-    trids_by_doi = defaultdict(set)
-    trids_by_pmc = defaultdict(set)
-    trids_by_pmid = defaultdict(set)
+    tr_ids_by_doi = defaultdict(set)
+    tr_ids_by_pmc = defaultdict(set)
+    tr_ids_by_pmid = defaultdict(set)
     trs_by_trid = {}
     for tr_dict in text_ref_dicts:
         if tr_dict.get('DOI'):
-            trs_by_doi[tr_dict['DOI']].add(tr_dict['TRID'])
+            tr_ids_by_doi[tr_dict['DOI']].add(tr_dict['TRID'])
         if tr_dict.get('PMCID'):
-            trs_by_pmc[tr_dict['PMCID']].add(tr_dict['TRID'])
+            tr_ids_by_pmc[tr_dict['PMCID']].add(tr_dict['TRID'])
         if tr_dict.get('PMID'):
-            trs_by_pmid[tr_dict['PMID']].add(tr_dict['TRID'])
+            tr_ids_by_pmid[tr_dict['PMID']].add(tr_dict['TRID'])
         trs_by_trid[tr_dict['TRID']] = tr_dict
     multiple_tr_ids = []
     mismatch_tr_ids = []
@@ -252,12 +252,12 @@ def cord19_metadata_for_trs(text_ref_dicts, md):
         # Find all the different TextRef IDs associated with the metadata
         # for this CORD19 araticle
         tr_ids_from_md = set()
-        if 'DOI' in tr_md and trs_by_doi.get(tr_md['DOI'].upper()):
-            tr_ids_from_md |= trs_by_doi[tr_md['DOI'].upper()]
-        if 'PMCID' in tr_md and trs_by_pmc.get(tr_md['PMCID']):
-            tr_ids_from_md |= trs_by_pmc[tr_md['PMCID']]
-        if 'PMID' in tr_md and trs_by_pmid.get(tr_md['PMID']):
-            tr_ids_from_md |= trs_by_pmid[tr_md['PMID']]
+        if 'DOI' in tr_md and tr_ids_by_doi.get(tr_md['DOI'].upper()):
+            tr_ids_from_md |= tr_ids_by_doi[tr_md['DOI'].upper()]
+        if 'PMCID' in tr_md and tr_ids_by_pmc.get(tr_md['PMCID']):
+            tr_ids_from_md |= tr_ids_by_pmc[tr_md['PMCID']]
+        if 'PMID' in tr_md and tr_ids_by_pmid.get(tr_md['PMID']):
+            tr_ids_from_md |= tr_ids_by_pmid[tr_md['PMID']]
         # No TextRef for this CORD19 entry, so skip it
         if not tr_ids_from_md:
             continue
