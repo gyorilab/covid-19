@@ -49,7 +49,8 @@ def get_unique_text_refs():
                       for res in res_list])
     print(len(ids), "unique TextRefs in DB")
     trs = db.select_all(db.TextRef, db.TextRef.id.in_(ids))
-    return trs
+    text_refs = [tr.get_ref_dict() for tr in trs]
+    return text_refs
 
 
 def get_text_refs_for_pubmed_search_term(search_term, **kwargs):
@@ -226,21 +227,22 @@ def dump_raw_stmts(tr_dicts, stmt_file):
     return stmts_flat
 
 
-def cord19_metadata_for_trs(text_refs, md):
-    """Get unified text_ref info given TextRef objects and CORD19 metadata."""
+def cord19_metadata_for_trs(text_ref_dicts, md):
+    """Get unified text_ref info given TextRef dictionaries and CORD19 metadata."""
     # Build up a sect of dictionaries for reverse lookup of TextRefs by
     # different IDs (DOI, PMC, PMID, etc.)
-    trs_by_doi = defaultdict(set)
-    trs_by_pmc = defaultdict(set)
-    trs_by_pmid = defaultdict(set)
-    trs_by_trid = defaultdict(set)
-    for tr in text_refs:
-        if tr.doi:
-            trs_by_doi[tr.doi].add(tr)
-        if tr.pmcid:
-            trs_by_pmc[tr.pmcid].add(tr)
-        if tr.pmid:
-            trs_by_pmid[tr.pmid].add(tr)
+    tr_ids_by_doi = defaultdict(set)
+    tr_ids_by_pmc = defaultdict(set)
+    tr_ids_by_pmid = defaultdict(set)
+    trs_by_trid = {}
+    for tr_dict in text_ref_dicts:
+        if tr_dict.get('DOI'):
+            tr_ids_by_doi[tr_dict['DOI']].add(tr_dict['TRID'])
+        if tr_dict.get('PMCID'):
+            tr_ids_by_pmc[tr_dict['PMCID']].add(tr_dict['TRID'])
+        if tr_dict.get('PMID'):
+            tr_ids_by_pmid[tr_dict['PMID']].add(tr_dict['TRID'])
+        trs_by_trid[tr_dict['TRID']] = tr_dict
     multiple_tr_ids = []
     mismatch_tr_ids = []
     tr_dicts = {}
@@ -250,12 +252,12 @@ def cord19_metadata_for_trs(text_refs, md):
         # Find all the different TextRef IDs associated with the metadata
         # for this CORD19 araticle
         tr_ids_from_md = set()
-        if 'DOI' in tr_md and trs_by_doi.get(tr_md['DOI'].upper()):
-            tr_ids_from_md |= trs_by_doi[tr_md['DOI'].upper()]
-        if 'PMCID' in tr_md and trs_by_pmc.get(tr_md['PMCID']):
-            tr_ids_from_md |= trs_by_pmc[tr_md['PMCID']]
-        if 'PMID' in tr_md and trs_by_pmid.get(tr_md['PMID']):
-            tr_ids_from_md |= trs_by_pmid[tr_md['PMID']]
+        if 'DOI' in tr_md and tr_ids_by_doi.get(tr_md['DOI'].upper()):
+            tr_ids_from_md |= tr_ids_by_doi[tr_md['DOI'].upper()]
+        if 'PMCID' in tr_md and tr_ids_by_pmc.get(tr_md['PMCID']):
+            tr_ids_from_md |= tr_ids_by_pmc[tr_md['PMCID']]
+        if 'PMID' in tr_md and tr_ids_by_pmid.get(tr_md['PMID']):
+            tr_ids_from_md |= tr_ids_by_pmid[tr_md['PMID']]
         # No TextRef for this CORD19 entry, so skip it
         if not tr_ids_from_md:
             continue
@@ -264,14 +266,8 @@ def cord19_metadata_for_trs(text_refs, md):
             print("More than one TextRef:", tr_md, tr_ids_from_md)
             multiple_tr_ids.append(tr_ids_from_md)
         # Now,  TRID and update text ref dict
-        for tr in tr_ids_from_md:
-            tr_dict = {'TRID': tr.id}
-            if tr.pmcid:
-                tr_dict['PMCID'] = tr.pmcid
-            if tr.pmid:
-                tr_dict['PMID'] = tr.pmid
-            if tr.doi:
-                tr_dict['DOI'] = tr.doi
+        for trid in tr_ids_from_md:
+            tr_dict = trs_by_trid[trid]
             # Prefer IDs from the database wherever there is overlap
             for id_type in ('DOI', 'PMCID', 'PMID'):
                 if id_type in tr_dict and id_type in tr_md:
@@ -283,7 +279,7 @@ def cord19_metadata_for_trs(text_refs, md):
             # Now that we've eliminated any overlaps, we can just update
             # the statement text ref dict
             tr_dict.update(tr_md)
-            tr_dicts[tr.id] = tr_dict
+            tr_dicts[tr_dict['TRID']] = tr_dict
     return tr_dicts, multiple_tr_ids
 
 
