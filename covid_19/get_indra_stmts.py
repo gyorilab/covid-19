@@ -49,7 +49,8 @@ def get_unique_text_refs():
                       for res in res_list])
     print(len(ids), "unique TextRefs in DB")
     trs = db.select_all(db.TextRef, db.TextRef.id.in_(ids))
-    return trs
+    text_refs = [tr.get_ref_dict() for tr in trs]
+    return text_refs
 
 
 def get_text_refs_for_pubmed_search_term(search_term, **kwargs):
