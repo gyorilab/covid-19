@@ -49,5 +49,5 @@ if __name__ == '__main__':
             from_reading = MAX_PER_TARGET - len(has_db_support)
             all_target_stmts += (has_db_support + reading_only[:from_reading])
 
-    with open('c19dm_inhibitors_by_target.pkl', 'wb') as fh:
+    with open(join(stmts_path, 'c19dm_inhibitors_by_target.pkl'), 'wb') as fh:
         pickle.dump(all_target_stmts, fh)
