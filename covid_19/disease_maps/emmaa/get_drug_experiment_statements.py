@@ -3,12 +3,11 @@ and brings them in a form where they can be applied on the COVID-19
 Disease Map models."""
 import copy
 import pickle
-from emmaa.util import get_s3_client
 from os.path import join, dirname, abspath
 from indra.sources import reach, hypothesis
-from indra.statements import RegulateActivity
 from emmaa.model_tests import StatementCheckingTest
 from covid_19.get_hypothesis_stmts import filter_by_tag
+from indra.ontology.standardize import standardize_name_db_refs
 
 
 def filter_to_sars_cov_2(stmts):
@@ -17,9 +16,10 @@ def filter_to_sars_cov_2(stmts):
 
 def map_readout(stmts):
     for stmt in stmts:
-        stmt.obj.name = 'Virus replication'
-        stmt.obj.db_refs = {'TEXT': stmt.obj.db_refs['TEXT'],
-                            'MESH': 'D014779'}
+        db_refs = {'TEXT': stmt.obj.db_refs['TEXT'],
+                   'MESH': 'D014779'}
+        stmt.obj.name, stmt.obj.db_refs = \
+            standardize_name_db_refs(db_refs)
     return stmts
 
 
@@ -37,7 +37,12 @@ if __name__ == '__main__':
     print(f'{len(test_stmts)} statements that will be used as tests.')
 
     scts = [StatementCheckingTest(stmt) for stmt in test_stmts]
-    stmts_file = join(dirname(abspath(__file__)), '..', '..', 'stmts',
+    name = 'Literature-curated drug screening'
+    description = 'A set of statements derived from literature-reported drug ' \
+                  'screening hits for SARS-CoV-2.'
+    tests = {'test': scts,
+             'test_data': {'name': name, 'description': description}}
+    stmts_file = join(dirname(abspath(__file__)), '..', '..', '..', 'stmts',
                       f'covid19_curated_tests_c19dm.pkl')
     with open(stmts_file, 'wb') as fh:
         pickle.dump(scts, fh)
