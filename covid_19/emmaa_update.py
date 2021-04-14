@@ -36,24 +36,24 @@ def combine_stmts(new_cord_by_tr, old_mm_by_tr):
     return stmts_copy
 
 
-def make_model_stmts(old_mm_stmts, other_stmts, new_cord_stmts=None):
+def make_model_stmts(old_mm_stmts, new_cord_stmts=None, date_limit=5):
     """Process and combine statements from different resources.
 
     Parameters
     ----------
     old_mm_stmts : list[indra.statements.Statement]
         A list of statements currently in the model.
-    other_stmts : list[indra.statements.Statement]
-        A list of statements that do not need additional processing
-        (e.g. drug, gordon, virhostnet statements).
     new_cord_stmts : Optional[list[indra.statements.Statement]]
         A list of newly extracted statements from CORD19 corpus. If not
         provided, the statements are pulled from the database and filtered
         to those not in old_mm_stmts.
-    
+    date_limit : Optional[int]
+        How many days back to search the database for CORD19 statements.
+        Default: 5.
+
     Returns
     -------
-    combined_stmts : list[indra.statements.Statement]
+    updated_mm_stmts : list[indra.statements.Statement]
         A list of statements to make a new model from.
     paper_ids : list[str]
         A list of TRIDs associated with statements.
@@ -75,7 +75,7 @@ def make_model_stmts(old_mm_stmts, other_stmts, new_cord_stmts=None):
         logger.info('Found %d TextRefs, %d of which are not in old model'
                     % (len(tr_dicts), len(new_tr_dicts)))
         # Get statements for new text re
-        new_cord_stmts = get_raw_stmts(new_tr_dicts, date_limit=5)
+        new_cord_stmts = get_raw_stmts(new_tr_dicts, date_limit=date_limit)
 
     logger.info('Processing the statements')
     # Filter out ungrounded statements
@@ -90,11 +90,9 @@ def make_model_stmts(old_mm_stmts, other_stmts, new_cord_stmts=None):
     updated_mm_stmts = [s for stmt_list in updated_mm_stmts_by_tr.values()
                           for s in stmt_list]
 
-    # Now, add back in all other statements
-    combined_stmts = updated_mm_stmts + other_stmts
-    logger.info('Got %d total statements.' % len(combined_stmts))
+    logger.info('Got %d total statements.' % len(updated_mm_stmts))
     logger.info('Processed %d papers.' % len(updated_mm_stmts_by_tr))
-    return combined_stmts, updated_mm_stmts_by_tr.keys()
+    return updated_mm_stmts, updated_mm_stmts_by_tr.keys()
 
 if __name__ == '__main__':
     # Example:
