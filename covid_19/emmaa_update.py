@@ -146,8 +146,9 @@ if __name__ == '__main__':
 
     other_stmts = drug_stmts + gordon_stmts + virhostnet_stmts + ctd_stmts
 
-    combined_stmts, _ = make_model_stmts(
+    model_stmts, _ = make_model_stmts(
         old_model_stmts, new_cord_stmts)
 
+    combined_stmts = model_stmts + other_stmts
     # Dump new pickle
     ac.dump_statements(combined_stmts, args.output_file)
