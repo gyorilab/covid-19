@@ -2,7 +2,9 @@ import os
 import csv
 import time
 import json
+import tqdm
 import zlib
+import logging
 import argparse
 import datetime
 from copy import deepcopy
@@ -17,6 +19,8 @@ from indra.tools import assemble_corpus as ac
 from indra.literature import pubmed_client
 from covid_19.preprocess import get_ids, fix_doi, fix_pmid, get_metadata_dict, \
                                 get_text_refs_from_metadata, download_metadata
+
+logger = logging.getLogger(__name__)
 
 
 def get_unique_text_refs():
@@ -97,29 +101,52 @@ def get_indradb_pa_stmts():
     return stmt_jsons
 
 
-def get_reach_readings(tr_dicts, dump_dir=None):
+def get_reach_readings(tr_dicts, dump_dir=None, reach_version='1.6.1',
+                       index_type='cord19', prioritize_by='type'):
     db = get_db('primary')
     # Get text ref dicts with article metadata aligned between DB and CORD19
-    # Get REACH readings 
+    # Get REACH readings
+    ts = time.time()
+    logger.info('Querying for Reach outputs')
     reach_data = db.select_all((db.Reading, db.TextRef,
                                 db.TextContent.source,
                                 db.TextContent.text_type),
                                db.TextRef.id.in_(tr_dicts.keys()),
                                db.TextContent.text_ref_id == db.TextRef.id,
                                db.Reading.text_content_id == db.TextContent.id,
-                               db.Reading.reader == 'REACH')
+                               db.Reading.reader.like('REACH'),
+                               db.Reading.reader_version.like(reach_version))
+    te = time.time()
+    logger.info('Finished querying for Reach outputs in %ss' % (te-ts))
+
     # Group readings by TextRef
     def tr_id_key_func(rd):
         return rd[1].id
-    def content_priority_func(rd):
-        text_type_priorities = {'fulltext': 0, 'abstract': 1, 'title': 2}
-        source_priorities = {'pmc_oa': 0, 'manuscripts': 1, 'elsevier': 2,
-                             'pubmed': 3}
-        return (rd[1].id, text_type_priorities[rd[3]], source_priorities[rd[2]])
+
+    if prioritize_by == 'type':
+        def content_priority_func(rd):
+            text_type_priorities = {'fulltext': 0, 'abstract': 1, 'title': 2}
+            source_priorities = {'pmc_oa': 0, 'manuscripts': 1, 'elsevier': 2,
+                                 'cord19_pmc_xml': 3, 'cord19_pdf': 4,
+                                 'cord19_abstract': 5, 'pubmed': 6}
+            if rd[3] not in text_type_priorities:
+                logger.info('Unhandled text type: %s' % rd[3])
+            if rd[2] not in source_priorities:
+                logger.info('Unhandled source: %s' % rd[2])
+            return (rd[1].id,
+                    text_type_priorities.get(rd[3], 100),
+                    source_priorities.get(rd[2], 100))
+    else:
+        def content_priority_func(rd):
+            return (rd[1].id,
+                    -len(rd[0].bytes))
+
     # Sort by TextRef ID and content type/source
+    logger.info('Sorting Reach outputs')
     reach_data.sort(key=content_priority_func)
     # Iterate over groups
     rds_filt = []
+    logger.info('Prioritizing Reach outputs')
     for tr_id, tr_group in groupby(reach_data, tr_id_key_func):
         rds = list(tr_group)
         best_reading = rds[0]
@@ -127,24 +154,31 @@ def get_reach_readings(tr_dicts, dump_dir=None):
         rds_filt.append(best_reading)
     # If a dump directory is given, put all files in it
     trs_by_cord = {}
+    logger.info('Dumping Reach outputs')
     if dump_dir:
         json_dir = join(dump_dir, 'json')
-        os.mkdir(json_dir)
-        for reading_result in rds_filt:
-            tr = reading_result.TextRef
+        if not os.path.exists(json_dir):
+            os.mkdir(json_dir)
+        for reading_result in tqdm.tqdm(rds_filt):
             reading = reading_result.Reading
             # If the reading output is empty, skip
             if not reading.bytes:
                 continue
+            tr = reading_result.TextRef
             text_ref = tr_dicts[tr.id]
-            cord_uid = text_ref['CORD19_UID']
-            trs_by_cord[cord_uid] = text_ref
-            with open(join(json_dir, f'{cord_uid}.json'), 'wt') as f:
+            if index_type == 'cord19':
+                cord_uid = text_ref['CORD19_UID']
+                trs_by_cord[cord_uid] = text_ref
+                fname = f'{cord_uid}.json'
+            else:
+                fname = f'{str(tr.id)}.json'
+            with open(join(json_dir, fname), 'wt') as f:
                 content = zlib.decompress(reading.bytes, 16+zlib.MAX_WBITS)
                 f.write(content.decode('utf8'))
-        # Dump the metadata dictionary
-        with open(join(dump_dir, 'metadata.json'), 'wt') as f:
-            json.dump(trs_by_cord, f, indent=2)
+        if index_type == 'cord19':
+            # Dump the metadata dictionary
+            with open(join(dump_dir, 'metadata.json'), 'wt') as f:
+                json.dump(trs_by_cord, f, indent=2)
     return rds_filt
 
 
