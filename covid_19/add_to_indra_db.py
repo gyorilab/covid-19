@@ -1,13 +1,9 @@
 import logging
-import pandas as pd
 from collections import defaultdict
 from indra.util import batch_iter
 from indra_db.util import get_db
-from indra.literature import id_lookup
-from indra.literature import pubmed_client
-from indra_db.managers import content_manager
 from indra_db.util.data_gatherer import DataGatherer, DGContext
-from indra_db.managers.content_manager import PmcManager, ContentManager
+from indra_db.cli.content import ContentManager, logger as content_logger
 from covid_19.get_indra_stmts import get_metadata_dict
 from covid_19.preprocess import get_text_refs_from_metadata, \
     get_zip_texts_for_entry, download_latest_data, get_all_texts
@@ -17,7 +13,7 @@ from indra_db.databases import sql_expressions as sql_exp
 logger = logging.getLogger(__name__)
 
 
-content_manager.logger.setLevel(logging.DEBUG)
+content_logger.setLevel(logging.DEBUG)
 
 
 gatherer = DataGatherer('content', ['refs', 'content'])
