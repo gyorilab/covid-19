@@ -22,6 +22,7 @@ gatherer = DataGatherer('content', ['refs', 'content'])
 class Cord19Manager(ContentManager):
     tr_cols = ('pmid', 'pmcid', 'doi')
     my_source = 'cord19'
+    primary_col = 'pmid'
 
     def __init__(self, cord_md):
         self.cord_md = cord_md
