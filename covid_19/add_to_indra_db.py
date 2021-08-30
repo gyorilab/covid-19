@@ -186,7 +186,7 @@ class Cord19Manager(ContentManager):
         flawed_tr_records = set()
         for ix, tr_batch in enumerate(batch_iter(tr_data_set, 10000)):
             print("Getting Text Refs using pmid/pmcid/doi, batch", ix)
-            filt_batch, flaw_batch = \
+            filt_batch, flaw_batch, id_map = \
                     self.filter_text_refs(db, set(tr_batch),
                                     primary_id_types=['pmid', 'pmcid', 'doi'])
             filtered_tr_records |= set(filt_batch)
@@ -200,7 +200,7 @@ class Cord19Manager(ContentManager):
         #                               'over_match_db']}
 
         # Then we put together the updated text content data
-        if len(trs_to_skip) is not 0:
+        if len(trs_to_skip) != 0:
             mod_tc_data = [
                 tc for tc in self.tc_data
                 if (tc.get('pmid'), tc.get('pmcid'), tc.get('doi'))
