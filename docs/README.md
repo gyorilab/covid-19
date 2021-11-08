@@ -188,7 +188,7 @@ biomedical research and can therefore also be used to study COVID-19.
 - [`INDRA network search`](https://network.indra.bio): The INDRA network search
   allows finding causal paths, shared regulators, and common targets between
   two entities. An example search relevant to COVID-19 is Subject: ACE2,
-  Object: MTOR (see [`here`](https://network.indra.bio/query?query=2482081424)).
+  Object: MTOR (see [`here`](https://network.indra.bio/#/?source=ACE2&target=MTOR)).
 - [`Dialogue.bio`](http://dialogue.bio): The dialogue.bio website allows
   launching dedicated human-machine dialogue sessions where you can upload your
   data (e.g., DE gene lists or gene expression profiles), discuss relevant
