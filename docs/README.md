@@ -102,7 +102,7 @@ here:
 [`ACE2`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/ACE2.html)
 [`TMPRSS2`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/TMPRSS2.html)
 [`CTSB`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSB.html)
-[`CTSL`]((https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSL.html))
+[`CTSL`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/CTSL.html)
 [`FURIN`](https://indra-covid19.s3.amazonaws.com/drugs_for_target/FURIN.html).
 
 We also compiled similar reports on the downstream effects of some specific
