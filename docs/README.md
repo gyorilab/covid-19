@@ -200,7 +200,7 @@ biomedical research and can therefore also be used to study COVID-19.
   an application. It supports direct messages or messages in channels to
   conduct dialogues about biological mechanisms. See demo video [`here`](http://sorger.med.harvard.edu/data/bgyori/clare_intro.mov). It is currently deployed in multiple workspaces
   and has answered hundreds of questions from COVID-19 researchers since
-  the pandemic began. Please [`contact us`](benjamin_gyori@hms.harvard.edu)
+  the pandemic began. Please [`contact us`](b.gyori@northeastern.edu)
   if you would like to install CLARE in your Slack workspace.
 
 Funding
