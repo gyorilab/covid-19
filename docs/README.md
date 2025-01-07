@@ -15,9 +15,9 @@ executable models and causal networks. Based on profiling and perturbational
 data, these models can be contextualized to be cell-type specific and used to
 explain experimental observations or to make predictions.
 
-In the context of the ongoing COVID-19 pandemic, the
-[`INDRA team`](https://gyorilab.github.io/) at the
-[`Laboratory of Systems Pharmacology, Harvard Medical School`](https://hits.harvard.edu/)
+In the context of the COVID-19 pandemic, the
+[`INDRA team`](https://gyorilab.github.io/), formerly at the
+[`Laboratory of Systems Pharmacology, Harvard Medical School`](https://hits.harvard.edu/),
 worked on understanding the mechanisms by which SARS-CoV-2 infects
 cells and the subsequent host response process, with the goal
 of finding new therapeutics using INDRA.
